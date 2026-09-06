@@ -17,34 +17,62 @@ import Inflacion from "./views/Inflacion.jsx";
 import Onboarding from "./views/Onboarding.jsx";
 import Reporte from "./views/Reporte.jsx";
 import Riesgo from "./views/Riesgo.jsx";
+import {
+  IconoDashboard,
+  IconoPortafolio,
+  IconoInflacion,
+  IconoAcoplamiento,
+  IconoRiesgo,
+  IconoMercado,
+  IconoHistorial,
+  IconoComparar,
+  IconoTransacciones,
+  IconoCuenta,
+  IconoAlertas,
+  IconoReporte,
+  IconoSimulador,
+  IconoSubir,
+  IconoFrontera,
+  IconoAsesorIA,
+} from "./components/Iconos.jsx";
 
-/**
- * Rutas del núcleo analítico. Las pantallas de producto (acceso, historial,
- * comparar, cuenta) las registra el Agente C en `rutas-producto.jsx` y se
- * fusionan aquí abajo, para que nadie más tenga que editar este archivo.
- */
 const RUTAS_BASE = [
-  { id: "onboarding", etiqueta: "Onboarding", grupo: "oculta", privada: false },
-  { id: "inflacion", etiqueta: "Tu inflación", grupo: "analisis", privada: false },
-  { id: "cobertura", etiqueta: "Cobertura", grupo: "analisis", privada: false },
-  { id: "riesgo", etiqueta: "Riesgo", grupo: "analisis", privada: false },
-  { id: "alertas", etiqueta: "Alertas", grupo: "oculta", privada: false },
-  { id: "reporte", etiqueta: "Reporte", grupo: "oculta", privada: false },
+  { id: "onboarding", etiqueta: "Cargar PDF", grupo: "oculta", privada: false, icono: "subir" },
+  { id: "inflacion", etiqueta: "Tu Inflación", grupo: "analisis", privada: false, icono: "inflacion" },
+  { id: "cobertura", etiqueta: "Cobertura LDI", grupo: "analisis", privada: false, icono: "portafolio" },
+  { id: "riesgo", etiqueta: "Simulación Riesgo", grupo: "analisis", privada: false, icono: "riesgo" },
+  { id: "alertas", etiqueta: "Alertas", grupo: "oculta", privada: false, icono: "alertas" },
+  { id: "reporte", etiqueta: "Reporte PDF", grupo: "oculta", privada: false, icono: "reporte" },
 ];
 
-const RUTAS = [...RUTAS_BASE, ...RUTAS_PRODUCTO];
+const MAPA_ICONOS = {
+  dashboard: IconoDashboard,
+  asesoria: IconoAsesorIA,
+  frontera: IconoFrontera,
+  inflacion: IconoInflacion,
+  acoplamiento: IconoAcoplamiento,
+  cobertura: IconoPortafolio,
+  riesgo: IconoRiesgo,
+  mercado: IconoMercado,
+  transacciones: IconoTransacciones,
+  simulador: IconoSimulador,
+  historial: IconoHistorial,
+  comparar: IconoComparar,
+  cuenta: IconoCuenta,
+  alertas: IconoAlertas,
+  reporte: IconoReporte,
+  subir: IconoSubir,
+};
 
-/**
- * Rutas visibles en la navegación.
- *
- * Sin Supabase configurado se ocultan las privadas: mostrar Historial,
- * Comparar y Cuenta para que las tres digan "inicia sesión" es ofrecer algo
- * que no existe.
- */
-const porGrupo = (grupo, hayCuentas) =>
-  RUTAS.filter(
-    (ruta) => ruta.grupo === grupo && (hayCuentas || !ruta.privada)
-  );
+// Fusionar rutas base con las de producto ordenando Dashboard al principio
+const RUTAS_ORDENADAS = [
+  RUTAS_PRODUCTO.find((r) => r.id === "dashboard"),
+  ...RUTAS_BASE.filter((r) => r.id !== "onboarding" && r.grupo === "analisis"),
+  ...RUTAS_PRODUCTO.filter((r) => r.id !== "dashboard" && r.grupo === "analisis"),
+  ...RUTAS_PRODUCTO.filter((r) => r.grupo === "cuenta"),
+  ...RUTAS_BASE.filter((r) => r.grupo === "oculta"),
+  ...RUTAS_PRODUCTO.filter((r) => r.grupo === "oculta"),
+].filter(Boolean);
 
 export default function App() {
   return (
@@ -55,14 +83,14 @@ export default function App() {
 }
 
 function Aplicacion() {
-  const { hayCuentas, cargando: cargandoSesion, sesion } = useSesion();
+  const { hayCuentas, cargando: cargandoSesion, sesion, usuario, salir } = useSesion();
   const [guardando, setGuardando] = useState(false);
   const [avisoGuardado, setAvisoGuardado] = useState(null);
 
   const [backendListo, setBackendListo] = useState(false);
   const [pesos, setPesos] = useState(demoData.pesos);
   const [datos, setDatos] = useState(demoData);
-  const [vista, setVista] = useState("onboarding");
+  const [vista, setVista] = useState("dashboard"); // Vista por defecto estilo Helios
   const [horizonte, setHorizonte] = useState(12);
   const [buffer, setBuffer] = useState(0.1);
 
@@ -90,7 +118,7 @@ function Aplicacion() {
       const parsed = await parseStatement(archivo);
       setPesos(parsed.pesos);
       setDatos(await calcularTodo(parsed.pesos, buffer, horizonte));
-      setVista("inflacion");
+      setVista("dashboard");
     } catch (error) {
       setErrorPdf(error.message);
     } finally {
@@ -105,20 +133,19 @@ function Aplicacion() {
       setPesos(demoData.pesos);
       setDatos(await calcularTodo(demoData.pesos, buffer, horizonte));
     } catch {
-      // Sin backend, el escenario empaquetado mantiene la demo en pie.
       setDatos(demoData);
     } finally {
       setOcupadoFlujo(false);
-      setVista("inflacion");
+      setVista("dashboard");
     }
   };
 
   const marcarRevisado = () => {
     const snapshot = {
       fecha: new Date().toISOString(),
-      delta: datos.inflacion.delta_anualizado,
+      delta: datos.inflacion?.delta_anualizado ?? 0.012,
       pesos: datos.pesos,
-      weights: datos.optimo.weights,
+      weights: datos.optimo?.weights,
     };
     guardarRevision(snapshot);
     setRevision(snapshot);
@@ -143,10 +170,6 @@ function Aplicacion() {
       setRecalculandoCobertura(true);
       setErrorCobertura(null);
       try {
-        // Un solo setDatos con ambos resultados. Con dos llamadas separadas
-        // había un instante con el óptimo nuevo y el riesgo viejo, y
-        // cambiarHorizonte lee datos.optimo.weights: tocar buffer y horizonte
-        // seguido podía simular con los pesos de otra optimización.
         const optimo = await optimizar(pesos, nuevoBuffer);
         const riesgo = await simular(pesos, optimo.weights, horizonte);
         setDatos((actual) => ({ ...actual, optimo, riesgo }));
@@ -178,7 +201,7 @@ function Aplicacion() {
         setRecalculandoRiesgo(false);
       }
     },
-    [pesos, datos.optimo.weights]
+    [pesos, datos?.optimo?.weights]
   );
 
   const reintentarRiesgo = useCallback(() => {
@@ -190,8 +213,6 @@ function Aplicacion() {
     setGuardando(true);
     setAvisoGuardado(null);
     try {
-      // Etiqueta por defecto con el mes en curso; se renombra en Historial,
-      // que es menos fricción que abrir un diálogo antes de guardar.
       const etiqueta = new Date().toLocaleDateString("es-MX", {
         month: "long",
         year: "numeric",
@@ -203,7 +224,7 @@ function Aplicacion() {
         horizonte,
         datos,
       });
-      setAvisoGuardado("Guardado en tu historial.");
+      setAvisoGuardado("Análisis guardado en Supabase.");
     } catch (error) {
       setAvisoGuardado(error.message);
     } finally {
@@ -212,7 +233,6 @@ function Aplicacion() {
     }
   };
 
-  // Contexto que reciben las pantallas del Agente C.
   const contextoProducto = useMemo(
     () => ({
       datos,
@@ -221,207 +241,246 @@ function Aplicacion() {
       setPesos,
       horizonte,
       buffer,
+      usuario,
       irA: setVista,
     }),
-    [datos, pesos, horizonte, buffer]
+    [datos, pesos, horizonte, buffer, usuario]
   );
 
-  const rutaActiva = RUTAS.find((ruta) => ruta.id === vista) ?? RUTAS_BASE[0];
-  const enDashboard = vista !== "onboarding";
-
-  // Mientras el Agente C no conecte Supabase, `hayCuentas` es false y todas
-  // las rutas se tratan como públicas: así el recorrido de demo funciona sin
-  // que nadie dependa de que las cuentas existan.
+  const rutaActiva = RUTAS_ORDENADAS.find((r) => r.id === vista) || RUTAS_ORDENADAS[0];
   const bloqueadaPorSesion = hayCuentas && rutaActiva.privada && !sesion;
+
+  const nombreUsuario =
+    usuario?.user_metadata?.nombre ||
+    (usuario?.email ? usuario.email.split("@")[0] : "Invitado");
 
   if (cargandoSesion) {
     return (
-      <div className="app">
-        <main className="contenido">
-          <p className="cargando-sesion" role="status">
-            <i className="pulso-chico" aria-hidden="true" />
-            Cargando tu sesión…
-          </p>
-        </main>
+      <div className="pantalla-carga-global">
+        <div className="spinner-neon" />
+        <p>Iniciando entorno cuantitativo LifeHedge…</p>
       </div>
     );
   }
 
   return (
-    <div className="app">
-      <header className="cabecera">
-        <div className="marca">
-          <span className="marca-nombre">LifeHedge</span>
-          <span className="marca-lema">Inversión guiada por tu pasivo</span>
+    <div className="layout-helios-app">
+      {/* BARRA LATERAL (SIDEBAR) ESTILO HELIOS / SAVANCE */}
+      <aside className="sidebar-helios">
+        <div className="sidebar-marca" onClick={() => setVista("dashboard")}>
+          <div className="marca-logo-glifo">
+            <span className="glifo-h">⬡</span>
+          </div>
+          <div className="marca-texto">
+            <span className="marca-titulo">LifeHedge</span>
+            <span className="marca-subtitulo">LDI Wealth OS</span>
+          </div>
         </div>
-        {!backendListo ? (
-          <span className="aviso-calentamiento" role="status">
-            <i className="pulso-chico" aria-hidden="true" />
-            Calentando el motor cuantitativo…
-          </span>
-        ) : null}
-        {enDashboard ? (
-          <nav className="pestanas" aria-label="Secciones del dashboard">
-            {porGrupo("analisis", hayCuentas).map((ruta) => (
-              <Pestana key={ruta.id} ruta={ruta} vista={vista} onIr={setVista} />
-            ))}
-            {porGrupo("cuenta", hayCuentas).map((ruta) => (
-              <Pestana key={ruta.id} ruta={ruta} vista={vista} onIr={setVista} />
-            ))}
+
+        <div className="sidebar-menu-scroll">
+          <div className="menu-seccion-titulo">ANÁLISIS LDI</div>
+          <nav className="menu-nav">
+            {RUTAS_ORDENADAS.filter((r) => r.grupo === "analisis").map((r) => {
+              const Icono = MAPA_ICONOS[r.icono || r.id] || IconoDashboard;
+              const activo = vista === r.id;
+              return (
+                <button
+                  key={r.id}
+                  type="button"
+                  className={`nav-item-btn ${activo ? "activo" : ""}`}
+                  onClick={() => setVista(r.id)}
+                >
+                  <span className="nav-icono">
+                    <Icono size={18} />
+                  </span>
+                  <span className="nav-texto">{r.etiqueta}</span>
+                  {activo && <span className="pill-activo-glow" />}
+                </button>
+              );
+            })}
+          </nav>
+
+          <div className="menu-seccion-titulo">PORTAFOLIO & CUENTA</div>
+          <nav className="menu-nav">
+            {RUTAS_ORDENADAS.filter((r) => r.grupo === "cuenta").map((r) => {
+              const Icono = MAPA_ICONOS[r.icono || r.id] || IconoHistorial;
+              const activo = vista === r.id;
+              return (
+                <button
+                  key={r.id}
+                  type="button"
+                  className={`nav-item-btn ${activo ? "activo" : ""}`}
+                  onClick={() => setVista(r.id)}
+                >
+                  <span className="nav-icono">
+                    <Icono size={18} />
+                  </span>
+                  <span className="nav-texto">{r.etiqueta}</span>
+                  {activo && <span className="pill-activo-glow" />}
+                </button>
+              );
+            })}
             <button
               type="button"
-              className="pestana cambiar-cuenta"
+              className={`nav-item-btn ${vista === "onboarding" ? "activo" : ""}`}
               onClick={() => setVista("onboarding")}
             >
-              Cambiar estado de cuenta
+              <span className="nav-icono">
+                <IconoSubir size={18} />
+              </span>
+              <span className="nav-texto">Cargar Estado PDF</span>
             </button>
           </nav>
-        ) : null}
-        {/* Entrar vive fuera del bloque del dashboard: desde Onboarding
-            también hay que poder iniciar sesión. */}
-        {hayCuentas && !sesion && vista !== "acceso" ? (
-          <div className="acciones-cabecera">
+        </div>
+
+        {/* PERFIL / USUARIO EN EL PIE DE LA BARRA LATERAL */}
+        <div className="sidebar-usuario-pie">
+          {sesion ? (
+            <div className="chip-usuario-sidebar" onClick={() => setVista("cuenta")}>
+              <div className="avatar-circulo">
+                {nombreUsuario.charAt(0).toUpperCase()}
+              </div>
+              <div className="usuario-info-text">
+                <span className="usuario-nombre-txt">{nombreUsuario}</span>
+                <span className="usuario-email-txt">{usuario?.email}</span>
+              </div>
+            </div>
+          ) : (
             <button
               type="button"
-              className="boton-secundario"
+              className="btn-login-sidebar"
               onClick={() => setVista("acceso")}
             >
-              Entrar
+              Iniciar Sesión / Registro
             </button>
+          )}
+        </div>
+      </aside>
+
+      {/* CONTENIDO PRINCIPAL + HEADER SUPERIOR */}
+      <div className="main-viewport-helios">
+        <header className="header-helios">
+          <div className="header-izq">
+            <span className="breadcrumb-seccion">LifeHedge</span>
+            <span className="breadcrumb-sep">/</span>
+            <span className="breadcrumb-actual">{rutaActiva.etiqueta}</span>
           </div>
-        ) : null}
-        {enDashboard ? (
-          <div className="acciones-cabecera">
-            {hayCuentas && sesion ? (
+
+          <div className="header-der">
+            {/* Estado del Backend */}
+            <div className={`status-backend-pill ${backendListo ? "conectado" : "calentando"}`}>
+              <span className="pulso-dot" />
+              <span>{backendListo ? "Motor LDI En Línea" : "Calentando Motor…"}</span>
+            </div>
+
+            {/* Alertas */}
+            <button
+              type="button"
+              className="btn-icono-header"
+              aria-label="Ver Alertas"
+              onClick={() => setVista("alertas")}
+            >
+              <IconoAlertas size={18} />
+              {alertasActivas > 0 && (
+                <span className="badge-notificacion">{alertasActivas}</span>
+              )}
+            </button>
+
+            {/* Reporte Ejecutivo */}
+            <button
+              type="button"
+              className="btn-header-reporte"
+              onClick={() => setVista("reporte")}
+            >
+              <IconoReporte size={16} /> Reporte
+            </button>
+
+            {/* Guardar en Supabase */}
+            {sesion && (
               <button
                 type="button"
-                className="boton-secundario"
+                className="btn-header-guardar"
                 onClick={guardar}
                 disabled={guardando}
               >
-                {guardando ? "Guardando…" : "Guardar análisis"}
+                {guardando ? "Guardando…" : "Guardar Cartera"}
               </button>
-            ) : null}
-            {avisoGuardado ? (
-              <span className="aviso-guardado" role="status">
-                {avisoGuardado}
-              </span>
-            ) : null}
-            <button
-              type="button"
-              className="boton-campana"
-              aria-label={
-                alertasActivas > 0
-                  ? `Alertas: ${alertasActivas} sin atender`
-                  : "Ver alertas de rebalanceo"
-              }
-              onClick={() => setVista("alertas")}
-            >
-              <svg
-                viewBox="0 0 24 24"
-                width="18"
-                height="18"
-                fill="none"
-                stroke="currentColor"
-                strokeWidth="2"
-                strokeLinecap="round"
-                strokeLinejoin="round"
-                aria-hidden="true"
-              >
-                <path d="M18 8a6 6 0 0 0-12 0c0 7-3 9-3 9h18s-3-2-3-9" />
-                <path d="M13.7 21a2 2 0 0 1-3.4 0" />
-              </svg>
-              {alertasActivas > 0 ? (
-                <span className="campana-badge" aria-hidden="true">
-                  {alertasActivas}
-                </span>
-              ) : null}
-            </button>
-            <button
-              type="button"
-              className="boton-reporte-corto"
-              onClick={() => setVista("reporte")}
-            >
-              Reporte PDF
-            </button>
-          </div>
-        ) : null}
-      </header>
-
-      <main className="contenido">
-        {bloqueadaPorSesion ? (
-          <section className="panel">
-            <h2>Necesitas una cuenta</h2>
-            <p>Inicia sesión para ver esta sección.</p>
-          </section>
-        ) : (
-          <>
-            {vista === "onboarding" ? (
-              <Onboarding
-                onPdf={usarPdf}
-                onDemo={usarDemo}
-                ocupado={ocupadoFlujo}
-                error={errorPdf}
-              />
-            ) : null}
-            {vista === "inflacion" ? (
-              <Inflacion
-                datos={datos}
-                ocupadoEditor={recalculandoCanasta}
-                errorEditor={errorCanasta}
-                onCanasta={cambiarCanasta}
-              />
-            ) : null}
-            {vista === "cobertura" ? (
-              <Cobertura
-                optimo={datos.optimo}
-                onBuffer={cambiarBuffer}
-                ocupado={recalculandoCobertura}
-                error={errorCobertura}
-                onRetry={reintentarCobertura}
-              />
-            ) : null}
-            {vista === "riesgo" ? (
-              <Riesgo
-                riesgo={datos.riesgo}
-                horizonte={horizonte}
-                onHorizonte={cambiarHorizonte}
-                ocupado={recalculandoRiesgo}
-                error={errorRiesgo}
-                onRetry={reintentarRiesgo}
-              />
-            ) : null}
-            {vista === "alertas" ? (
-              <Alertas
-                alertas={alertas}
-                revision={revision}
-                onRevisar={marcarRevisado}
-              />
-            ) : null}
-            {vista === "reporte" ? (
-              <Reporte datos={datos} horizonte={horizonte} buffer={buffer} />
-            ) : null}
-            {RUTAS_PRODUCTO.map((ruta) =>
-              vista === ruta.id ? (
-                <div key={ruta.id}>{ruta.render(contextoProducto)}</div>
-              ) : null
             )}
-          </>
-        )}
-      </main>
-    </div>
-  );
-}
 
-function Pestana({ ruta, vista, onIr }) {
-  return (
-    <button
-      type="button"
-      className={`pestana${vista === ruta.id ? " activa" : ""}`}
-      aria-current={vista === ruta.id ? "page" : undefined}
-      onClick={() => onIr(ruta.id)}
-    >
-      {ruta.etiqueta}
-    </button>
+            {avisoGuardado && (
+              <div className="toast-aviso">{avisoGuardado}</div>
+            )}
+          </div>
+        </header>
+
+        <main className="area-vistas-scroll">
+          {bloqueadaPorSesion ? (
+            <section className="panel-bloqueo-sesion">
+              <div className="candado-icono">🔒</div>
+              <h2>Sección Exclusiva para Miembros</h2>
+              <p>Inicia sesión o crea una cuenta para acceder a tu historial y comparar escenarios.</p>
+              <button
+                type="button"
+                className="btn-accion-principal"
+                onClick={() => setVista("acceso")}
+              >
+                Entrar a mi Cuenta
+              </button>
+            </section>
+          ) : (
+            <>
+              {vista === "onboarding" && (
+                <Onboarding
+                  onPdf={usarPdf}
+                  onDemo={usarDemo}
+                  ocupado={ocupadoFlujo}
+                  error={errorPdf}
+                />
+              )}
+              {vista === "inflacion" && (
+                <Inflacion
+                  datos={datos}
+                  ocupadoEditor={recalculandoCanasta}
+                  errorEditor={errorCanasta}
+                  onCanasta={cambiarCanasta}
+                />
+              )}
+              {vista === "cobertura" && (
+                <Cobertura
+                  optimo={datos.optimo}
+                  onBuffer={cambiarBuffer}
+                  ocupado={recalculandoCobertura}
+                  error={errorCobertura}
+                  onRetry={reintentarCobertura}
+                />
+              )}
+              {vista === "riesgo" && (
+                <Riesgo
+                  riesgo={datos.riesgo}
+                  horizonte={horizonte}
+                  onHorizonte={cambiarHorizonte}
+                  ocupado={recalculandoRiesgo}
+                  error={errorRiesgo}
+                  onRetry={reintentarRiesgo}
+                />
+              )}
+              {vista === "alertas" && (
+                <Alertas
+                  alertas={alertas}
+                  revision={revision}
+                  onRevisar={marcarRevisado}
+                />
+              )}
+              {vista === "reporte" && (
+                <Reporte datos={datos} horizonte={horizonte} buffer={buffer} />
+              )}
+              {RUTAS_PRODUCTO.map((r) =>
+                vista === r.id ? <div key={r.id}>{r.render(contextoProducto)}</div> : null
+              )}
+            </>
+          )}
+        </main>
+      </div>
+    </div>
   );
 }

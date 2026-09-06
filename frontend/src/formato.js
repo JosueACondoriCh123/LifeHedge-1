@@ -16,6 +16,13 @@ const fechaLarga = new Intl.DateTimeFormat("es-MX", {
   year: "numeric",
 });
 
+const moneda = new Intl.NumberFormat("es-MX", {
+  style: "currency",
+  currency: "MXN",
+  minimumFractionDigits: 2,
+  maximumFractionDigits: 2,
+});
+
 export const fmtPct = (v) => porcentaje.format(v);
 
 export const fmtPctDetallado = (v) => porcentajeDetallado.format(v);
@@ -26,6 +33,8 @@ export const fmtPctConSigno = (v) =>
 export const fmtPuntos = (v) => `${Math.round(v * 100)} puntos`;
 
 export const fmtRatio = (v) => (typeof v === "number" ? v.toFixed(3) : "—");
+
+export const fmtMoneda = (v) => (typeof v === "number" ? moneda.format(v) : "—");
 
 export const fmtFecha = (iso) => {
   const fecha = new Date(iso);

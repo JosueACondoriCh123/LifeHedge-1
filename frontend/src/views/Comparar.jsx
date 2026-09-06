@@ -184,14 +184,32 @@ export default function Comparar() {
                   const vb = m.leer(b);
                   if (typeof va !== "number" || typeof vb !== "number") return null;
                   const dif = vb - va;
+                  // Por debajo de medio punto porcentual la diferencia se
+                  // redondearía a cero: pintarla como mejora o empeoramiento
+                  // sería inventar una señal que no existe.
+                  const iguales = Math.abs(dif) < 0.005;
                   const mejora = m.mejorSi === "mayor" ? dif > 0 : dif < 0;
                   return (
                     <tr key={m.clave}>
                       <td>{m.etiqueta}</td>
                       <td>{m.formato(va)}</td>
                       <td>{m.formato(vb)}</td>
-                      <td className={mejora ? "cifra-positiva" : "cifra-alerta"}>
-                        {mejora ? "▲" : "▼"} {fmtPuntos(Math.abs(dif))}
+                      <td
+                        className={
+                          iguales
+                            ? "cifra-tenue"
+                            : mejora
+                              ? "cifra-positiva"
+                              : "cifra-alerta"
+                        }
+                      >
+                        {iguales ? (
+                          "Sin cambio"
+                        ) : (
+                          <>
+                            {mejora ? "▲" : "▼"} {fmtPuntos(Math.abs(dif))}
+                          </>
+                        )}
                       </td>
                     </tr>
                   );
