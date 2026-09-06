@@ -87,3 +87,51 @@ export async function borrarAnalisis(id) {
   const { error } = await supabase.from("analisis").delete().eq("id", id);
   if (error) throw new Error("No pudimos borrar ese análisis.");
 }
+
+/**
+ * Obtiene métricas acumuladas del usuario directamente desde la función RPC de Supabase.
+ * Devuelve total_analisis, total_estados, bytes_almacenados, phe_promedio, delta_promedio.
+ */
+export async function obtenerResumenUsuario() {
+  if (!supabase) throw new Error(SIN_CUENTAS);
+  const { data, error } = await supabase.rpc("resumen_usuario");
+  if (error) throw new Error("No pudimos obtener el resumen de tu cuenta.");
+  return data;
+}
+
+/**
+ * Compara dos análisis directamente en PostgreSQL.
+ * Devuelve ambos registros y las diferencias calculadas en el servidor.
+ */
+export async function compararAnalisisRpc(idA, idB) {
+  if (!supabase) throw new Error(SIN_CUENTAS);
+  const { data, error } = await supabase.rpc("comparar_dos_analisis", {
+    p_id_a: idA,
+    p_id_b: idB,
+  });
+  if (error) throw new Error("No pudimos comparar los análisis seleccionados.");
+  return data;
+}
+
+/**
+ * Devuelve la serie temporal de análisis para gráficas en Recharts (Historial).
+ */
+export async function obtenerTendenciaHistorica() {
+  if (!supabase) throw new Error(SIN_CUENTAS);
+  const { data, error } = await supabase.rpc("tendencia_historica");
+  if (error) throw new Error("No pudimos cargar la tendencia histórica.");
+  return data ?? [];
+}
+
+/**
+ * Actualiza de forma segura el nombre del perfil de usuario vía RPC.
+ */
+export async function actualizarNombrePerfil(nuevoNombre) {
+  if (!supabase) throw new Error(SIN_CUENTAS);
+  const { data, error } = await supabase.rpc("actualizar_nombre_perfil", {
+    p_nuevo_nombre: nuevoNombre,
+  });
+  if (error) throw new Error(error.message || "No pudimos actualizar el nombre del perfil.");
+  return data;
+}
+

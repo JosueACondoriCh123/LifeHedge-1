@@ -277,6 +277,19 @@ function Aplicacion() {
             </button>
           </nav>
         ) : null}
+        {/* Entrar vive fuera del bloque del dashboard: desde Onboarding
+            también hay que poder iniciar sesión. */}
+        {hayCuentas && !sesion && vista !== "acceso" ? (
+          <div className="acciones-cabecera">
+            <button
+              type="button"
+              className="boton-secundario"
+              onClick={() => setVista("acceso")}
+            >
+              Entrar
+            </button>
+          </div>
+        ) : null}
         {enDashboard ? (
           <div className="acciones-cabecera">
             {hayCuentas && sesion ? (
@@ -287,15 +300,6 @@ function Aplicacion() {
                 disabled={guardando}
               >
                 {guardando ? "Guardando…" : "Guardar análisis"}
-              </button>
-            ) : null}
-            {hayCuentas && !sesion ? (
-              <button
-                type="button"
-                className="boton-secundario"
-                onClick={() => setVista("acceso")}
-              >
-                Entrar
               </button>
             ) : null}
             {avisoGuardado ? (

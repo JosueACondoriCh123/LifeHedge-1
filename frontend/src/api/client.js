@@ -96,5 +96,8 @@ export const simular = (pesos, weights, horizonte = 12) =>
  * devuelve optimizar—, y con el arranque en frío de Render eso triplicaba
  * tanto la espera como la probabilidad de fallar a media carga.
  */
-export const calcularTodo = (pesos, buffer = 0.1, horizonte = 12) =>
-  pedir("/analysis/run", json({ pesos, buffer, horizonte }));
+export const calcularTodo = async (pesos, buffer = 0.1, horizonte = 12) => {
+  const data = await pedir("/analysis/run", json({ pesos, buffer, horizonte }));
+  return { ...data, pesos };
+};
+

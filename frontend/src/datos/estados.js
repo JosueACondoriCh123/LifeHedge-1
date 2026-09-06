@@ -116,3 +116,22 @@ export async function borrarTodo() {
     .eq("usuario_id", usuario_id);
   if (errEstados) throw new Error("No pudimos borrar tus estados de cuenta.");
 }
+
+/**
+ * Purga de la base de datos los estados de cuenta vencidos (>90 días)
+ * y elimina inmediatamente los archivos físicos asociados en el bucket de Storage.
+ */
+export async function purgarEstadosVencidosConStorage() {
+  if (!supabase) throw new Error(SIN_CUENTAS);
+  const { data, error } = await supabase.rpc("purgar_estados_con_rutas");
+  if (error) throw new Error("No pudimos purgar los estados de cuenta vencidos.");
+
+  if (data && data.length > 0) {
+    const rutas = data.map((r) => r.ruta_storage).filter(Boolean);
+    if (rutas.length > 0) {
+      await supabase.storage.from(BUCKET).remove(rutas);
+    }
+  }
+  return data ? data.length : 0;
+}
+

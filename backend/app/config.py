@@ -81,6 +81,8 @@ class Settings(BaseSettings):
     inegi_token: str | None = None
     banxico_token: str | None = None
     supabase_jwt_secret: str | None = None
+    # URL del proyecto: de aquí sale el JWKS con la clave pública ES256.
+    supabase_url: str | None = None
     cors_origins_raw: str = "http://localhost:5173"
     market_ttl_seconds: int = 60 * 60 * 24
     inpc_ttl_seconds: int = 60 * 60 * 24 * 7
