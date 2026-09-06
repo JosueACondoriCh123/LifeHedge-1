@@ -1,0 +1,321 @@
+/*
+ * Estilos de las pantallas de producto: Acceso, Historial, Comparar y Cuenta.
+ *
+ * Se importa después de styles.css desde main.jsx, así que estas reglas
+ * ganan sin necesitar !important. Todo usa los tokens de :root.
+ */
+
+/* ---------- Acceso ---------- */
+
+.acceso {
+  max-width: 420px;
+  margin: var(--e-8) auto;
+  display: flex;
+  flex-direction: column;
+  gap: var(--e-4);
+  background: var(--tarjeta);
+  border: 1px solid var(--linea);
+  border-radius: var(--radio-lg);
+  box-shadow: var(--sombra-2);
+  padding: var(--e-7);
+}
+
+.acceso h1 {
+  margin: 0;
+  font-size: var(--txt-xl);
+  letter-spacing: -0.01em;
+}
+
+.acceso-lema {
+  margin: 0;
+  color: var(--tinta-suave);
+  font-size: var(--txt-sm);
+}
+
+.acceso-form {
+  display: flex;
+  flex-direction: column;
+  gap: var(--e-3);
+}
+
+.campo {
+  display: flex;
+  flex-direction: column;
+  gap: var(--e-1);
+  font-size: var(--txt-2xs);
+  color: var(--tinta-suave);
+  text-transform: uppercase;
+  letter-spacing: 0.06em;
+}
+
+.campo input,
+.campo select {
+  font: inherit;
+  font-size: var(--txt-md);
+  text-transform: none;
+  letter-spacing: normal;
+  color: var(--tinta);
+  padding: var(--e-2) var(--e-3);
+  border: 1px solid var(--linea-fuerte);
+  border-radius: var(--radio-sm);
+  background: var(--tarjeta);
+  transition: border-color var(--dur-rapido) var(--curva),
+    box-shadow var(--dur-rapido) var(--curva);
+}
+
+.campo input:focus-visible,
+.campo select:focus-visible {
+  outline: none;
+  border-color: var(--acento);
+  box-shadow: 0 0 0 3px var(--acento-suave);
+}
+
+.acceso-alterno,
+.acceso-nota {
+  margin: 0;
+  font-size: var(--txt-xs);
+  color: var(--tinta-suave);
+  text-align: center;
+}
+
+.enlace {
+  background: none;
+  border: none;
+  padding: 0;
+  font: inherit;
+  color: var(--acento);
+  cursor: pointer;
+  text-decoration: underline;
+  text-underline-offset: 2px;
+}
+
+.enlace:hover {
+  color: var(--tinta);
+}
+
+.acceso-separador {
+  display: flex;
+  align-items: center;
+  gap: var(--e-3);
+  color: var(--tinta-tenue);
+  font-size: var(--txt-2xs);
+}
+
+.acceso-separador::before,
+.acceso-separador::after {
+  content: "";
+  flex: 1;
+  height: 1px;
+  background: var(--linea);
+}
+
+/* ---------- Estados vacíos y esqueletos ---------- */
+
+.estado-vacio {
+  text-align: center;
+  color: var(--tinta-suave);
+  padding: var(--e-8) var(--e-6);
+}
+
+.lista-esqueleto {
+  list-style: none;
+  margin: var(--e-3) 0 0;
+  padding: 0;
+  display: flex;
+  flex-direction: column;
+  gap: var(--e-2);
+}
+
+.esqueleto-fila {
+  height: 44px;
+  border-radius: var(--radio-sm);
+  background: linear-gradient(
+    90deg,
+    var(--linea) 25%,
+    var(--fondo) 50%,
+    var(--linea) 75%
+  );
+  background-size: 200% 100%;
+  animation: brillo 1.4s ease-in-out infinite;
+}
+
+@keyframes brillo {
+  from {
+    background-position: 200% 0;
+  }
+  to {
+    background-position: -200% 0;
+  }
+}
+
+/* ---------- Paneles de error y peligro ---------- */
+
+.panel-error {
+  border-left: 3px solid var(--alerta);
+  background: var(--alerta-fondo);
+}
+
+.panel-peligro {
+  border-left: 3px solid var(--alerta);
+}
+
+.boton-peligro {
+  padding: var(--e-2) var(--e-3);
+  border-radius: var(--radio-sm);
+  border: 1px solid var(--alerta);
+  background: var(--tarjeta);
+  color: var(--alerta);
+  cursor: pointer;
+  font-size: var(--txt-xs);
+  transition: background var(--dur-rapido) var(--curva),
+    color var(--dur-rapido) var(--curva);
+}
+
+.boton-peligro:hover:not(:disabled) {
+  background: var(--alerta);
+  color: var(--tarjeta);
+}
+
+.boton-peligro:active:not(:disabled) {
+  transform: translateY(1px);
+}
+
+/* ---------- Tablas de producto ---------- */
+
+.acciones-fila {
+  display: flex;
+  gap: var(--e-2);
+  justify-content: flex-end;
+}
+
+.entrada-inline {
+  font: inherit;
+  padding: var(--e-1) var(--e-2);
+  border: 1px solid var(--acento);
+  border-radius: var(--radio-sm);
+  background: var(--tarjeta);
+  color: var(--tinta);
+  width: 100%;
+  max-width: 220px;
+}
+
+.cifra-positiva {
+  color: var(--acento);
+}
+
+.cifra-alerta {
+  color: var(--alerta);
+}
+
+.cifra-tenue {
+  color: var(--tinta-tenue);
+}
+
+/* ---------- Comparar ---------- */
+
+.comparar-selectores {
+  display: grid;
+  grid-template-columns: 1fr 1fr;
+  gap: var(--e-4);
+}
+
+.muestra-color {
+  display: inline-block;
+  width: 10px;
+  height: 10px;
+  border-radius: var(--radio-pill);
+  margin-right: var(--e-1);
+  vertical-align: baseline;
+}
+
+.tabla-comparacion td:first-child {
+  color: var(--tinta-suave);
+}
+
+.leyenda {
+  list-style: none;
+  display: flex;
+  flex-wrap: wrap;
+  gap: var(--e-4);
+  margin: var(--e-2) 0 0;
+  padding: 0;
+  font-size: var(--txt-xs);
+  color: var(--tinta-suave);
+}
+
+.leyenda li {
+  display: flex;
+  align-items: center;
+  gap: var(--e-2);
+}
+
+.leyenda .muestra {
+  width: 12px;
+  height: 12px;
+  border-radius: 2px;
+  display: inline-block;
+}
+
+/* ---------- Cuenta ---------- */
+
+.lista-datos {
+  margin: 0 0 var(--e-4);
+  display: grid;
+  gap: var(--e-3);
+}
+
+.lista-datos div {
+  display: grid;
+  grid-template-columns: 140px 1fr;
+  gap: var(--e-3);
+  align-items: baseline;
+}
+
+.lista-datos dt {
+  font-size: var(--txt-2xs);
+  color: var(--tinta-suave);
+  text-transform: uppercase;
+  letter-spacing: 0.06em;
+}
+
+.lista-datos dd {
+  margin: 0;
+  font-size: var(--txt-md);
+}
+
+.cargando-sesion {
+  display: flex;
+  align-items: center;
+  gap: var(--e-2);
+  justify-content: center;
+  padding: var(--e-9) 0;
+  color: var(--tinta-suave);
+}
+
+@media (max-width: 768px) {
+  .comparar-selectores {
+    grid-template-columns: 1fr;
+  }
+
+  .lista-datos div {
+    grid-template-columns: 1fr;
+    gap: var(--e-1);
+  }
+
+  .acceso {
+    margin: var(--e-5) auto;
+    padding: var(--e-5);
+  }
+}
+
+@media print {
+  .acceso,
+  .panel-peligro {
+    display: none;
+  }
+}
+
+.aviso-guardado {
+  font-size: var(--txt-xs);
+  color: var(--acento);
+}

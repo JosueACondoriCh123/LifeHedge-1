@@ -1,0 +1,23 @@
+# Entornos
+.venv/
+node_modules/
+
+# Secretos
+.env
+.env.local
+
+# Artefactos
+dist/
+__pycache__/
+*.pyc
+.pytest_cache/
+.vite/
+
+# Cache de datos: se regenera, nunca se commitea
+backend/data/cache/
+
+# Herramientas locales
+.commandcode/
+
+# Temporales de pytest
+.pytest-tmp-*/

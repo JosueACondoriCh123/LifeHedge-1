@@ -1,0 +1,10 @@
+# Finales de linea uniformes: LF en el repositorio y en disco.
+# Sin esto, con core.autocrlf=true en Windows cada agente genera diffs
+# fantasma de archivos que no ha tocado.
+* text=auto eol=lf
+
+*.pdf  binary
+*.png  binary
+*.jpg  binary
+*.svg  text eol=lf
+*.ico  binary

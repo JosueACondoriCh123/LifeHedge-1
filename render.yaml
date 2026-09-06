@@ -1,0 +1,17 @@
+services:
+  - type: web
+    name: lifehedge-api
+    runtime: docker
+    rootDir: backend
+    dockerfilePath: ./Dockerfile
+    plan: free
+    healthCheckPath: /health
+    envVars:
+      - key: INEGI_TOKEN
+        sync: false
+      - key: BANXICO_TOKEN
+        sync: false
+      - key: SUPABASE_JWT_SECRET
+        sync: false
+      - key: CORS_ORIGINS_RAW
+        sync: false
