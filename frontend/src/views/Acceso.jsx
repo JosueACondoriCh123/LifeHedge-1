@@ -140,9 +140,9 @@ export default function Acceso({ onListo, onCancelar, modoInicial = "entrar" }) 
               type="button"
               onClick={() => cambiarIdioma("es")}
               style={{
-                background: !esIngles ? "rgba(59, 167, 255, 0.25)" : "transparent",
-                color: !esIngles ? "#3ba7ff" : "var(--color-texto-apagado)",
-                border: "none",
+                background: !esIngles ? "rgba(248, 204, 27, 0.15)" : "transparent",
+                color: !esIngles ? "#f8cc1b" : "var(--color-texto-apagado)",
+                border: !esIngles ? "1px solid rgba(248, 204, 27, 0.3)" : "1px solid transparent",
                 borderRadius: "14px",
                 padding: "2px 8px",
                 cursor: "pointer",
@@ -156,9 +156,9 @@ export default function Acceso({ onListo, onCancelar, modoInicial = "entrar" }) 
               type="button"
               onClick={() => cambiarIdioma("en")}
               style={{
-                background: esIngles ? "rgba(59, 167, 255, 0.25)" : "transparent",
-                color: esIngles ? "#3ba7ff" : "var(--color-texto-apagado)",
-                border: "none",
+                background: esIngles ? "rgba(248, 204, 27, 0.15)" : "transparent",
+                color: esIngles ? "#f8cc1b" : "var(--color-texto-apagado)",
+                border: esIngles ? "1px solid rgba(248, 204, 27, 0.3)" : "1px solid transparent",
                 borderRadius: "14px",
                 padding: "2px 8px",
                 cursor: "pointer",

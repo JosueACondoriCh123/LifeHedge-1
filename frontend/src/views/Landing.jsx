@@ -130,22 +130,11 @@ export default function Landing({ onExplorar, onAnalizar, onAcceso, onRegistro }
           <a href="#capacidades">Capacidades</a>
           <a href="#seguridad">Riesgo</a>
         </nav>
-        <div style={{ display: "flex", gap: "10px", alignItems: "center" }}>
+        <div className="landing-nav-actions">
           <button
             type="button"
             className="landing-nav-login"
             onClick={onAcceso}
-            style={{
-              background: "rgba(255,255,255,0.04)",
-              border: "1px solid rgba(126,164,226,0.25)",
-              color: "#ffffff",
-              padding: "7px 15px",
-              borderRadius: "9999px",
-              fontSize: "0.82rem",
-              fontWeight: "600",
-              cursor: "pointer",
-              transition: "all 0.2s ease",
-            }}
           >
             Iniciar Sesión
           </button>

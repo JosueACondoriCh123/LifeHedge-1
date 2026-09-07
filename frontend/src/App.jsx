@@ -413,9 +413,9 @@ function Aplicacion() {
                 type="button"
                 className="btn-login-sidebar"
                 style={{
-                  background: "rgba(59, 167, 255, 0.15)",
-                  borderColor: "rgba(59, 167, 255, 0.38)",
-                  color: "#ffffff"
+                  background: "rgba(248, 204, 27, 0.12)",
+                  borderColor: "rgba(248, 204, 27, 0.35)",
+                  color: "#f8cc1b"
                 }}
                 onClick={() => setVista("registro")}
               >
@@ -437,29 +437,10 @@ function Aplicacion() {
 
           <div className="header-der">
             {/* Selector Rápido de Idioma */}
-            <div
-              className="selector-idioma-pill"
-              style={{
-                display: "inline-flex",
-                alignItems: "center",
-                background: "rgba(255, 255, 255, 0.04)",
-                border: "1px solid var(--color-borde)",
-                borderRadius: "20px",
-                padding: "2px 3px",
-              }}
-            >
+            <div className="selector-idioma-pill">
               <button
                 type="button"
-                style={{
-                  background: esEspanol ? "rgba(59, 167, 255, 0.25)" : "transparent",
-                  color: esEspanol ? "#ffffff" : "var(--color-texto-apagado)",
-                  border: "none",
-                  borderRadius: "14px",
-                  padding: "3px 8px",
-                  fontSize: "0.72rem",
-                  fontWeight: esEspanol ? 700 : 500,
-                  cursor: "pointer",
-                }}
+                className={`btn-idioma ${esEspanol ? "activo" : ""}`}
                 onClick={() => cambiarIdioma("es")}
                 title="Cambiar a Español"
               >
@@ -467,16 +448,7 @@ function Aplicacion() {
               </button>
               <button
                 type="button"
-                style={{
-                  background: esIngles ? "rgba(59, 167, 255, 0.25)" : "transparent",
-                  color: esIngles ? "#ffffff" : "var(--color-texto-apagado)",
-                  border: "none",
-                  borderRadius: "14px",
-                  padding: "3px 8px",
-                  fontSize: "0.72rem",
-                  fontWeight: esIngles ? 700 : 500,
-                  cursor: "pointer",
-                }}
+                className={`btn-idioma ${esIngles ? "activo" : ""}`}
                 onClick={() => cambiarIdioma("en")}
                 title="Switch to English"
               >

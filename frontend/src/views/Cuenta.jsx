@@ -144,15 +144,15 @@ export default function Cuenta() {
               alignItems: "center",
               gap: "8px",
               fontWeight: 600,
-              background: esEspanol ? "rgba(59, 167, 255, 0.16)" : "transparent",
-              borderColor: esEspanol ? "#3ba7ff" : "var(--color-borde)",
+              background: esEspanol ? "rgba(248, 204, 27, 0.12)" : "transparent",
+              borderColor: esEspanol ? "#f8cc1b" : "var(--color-borde)",
               color: esEspanol ? "#ffffff" : "var(--color-texto)",
             }}
             onClick={() => cambiarIdioma("es")}
           >
             <span>{t("cuenta.langEs")}</span>
             {esEspanol && (
-              <span style={{ fontSize: "0.68rem", background: "#3ba7ff", color: "#000", padding: "1px 6px", borderRadius: "10px", fontWeight: 700 }}>
+              <span style={{ fontSize: "0.68rem", background: "#f8cc1b", color: "#17170d", padding: "1px 6px", borderRadius: "10px", fontWeight: 700 }}>
                 {t("cuenta.activeLang")}
               </span>
             )}
@@ -167,15 +167,15 @@ export default function Cuenta() {
               alignItems: "center",
               gap: "8px",
               fontWeight: 600,
-              background: esIngles ? "rgba(59, 167, 255, 0.16)" : "transparent",
-              borderColor: esIngles ? "#3ba7ff" : "var(--color-borde)",
+              background: esIngles ? "rgba(248, 204, 27, 0.12)" : "transparent",
+              borderColor: esIngles ? "#f8cc1b" : "var(--color-borde)",
               color: esIngles ? "#ffffff" : "var(--color-texto)",
             }}
             onClick={() => cambiarIdioma("en")}
           >
             <span>{t("cuenta.langEn")}</span>
             {esIngles && (
-              <span style={{ fontSize: "0.68rem", background: "#3ba7ff", color: "#000", padding: "1px 6px", borderRadius: "10px", fontWeight: 700 }}>
+              <span style={{ fontSize: "0.68rem", background: "#f8cc1b", color: "#17170d", padding: "1px 6px", borderRadius: "10px", fontWeight: 700 }}>
                 {t("cuenta.activeLang")}
               </span>
             )}
