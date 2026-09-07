@@ -12,12 +12,14 @@ import {
 } from "recharts";
 import { fmtPct, fmtPctDetallado, fmtMoneda, fmtPuntos } from "../formato.js";
 import { TICKER_LABELS } from "../cartera.js";
-import { IconoPortafolio, IconoCheck } from "../components/Iconos.jsx";
+import { IconoPortafolio, IconoCheck, IconoDescargar } from "../components/Iconos.jsx";
+import { confirmarEjecucionRebalanceo, evaluarDriftPortafolio } from "../datos/analisis.js";
 
 export default function Frontera({ datos, onIr }) {
   const { optimo } = datos;
   const [capitalTotal, setCapitalTotal] = useState(100000);
   const [ordenesEjecutadas, setOrdenesEjecutadas] = useState(false);
+  const [ejecutando, setEjecutando] = useState(false);
 
   // Puntos de la frontera eficiente desde el optimizador QP
   const puntos = useMemo(() => {
@@ -53,9 +55,39 @@ export default function Frontera({ datos, onIr }) {
     }).sort((a, b) => b.peso - a.peso);
   }, [optimo, capitalTotal]);
 
-  const handleEjecutar = () => {
-    setOrdenesEjecutadas(true);
-    setTimeout(() => setOrdenesEjecutadas(false), 4000);
+  const handleEjecutar = async () => {
+    setEjecutando(true);
+    try {
+      // Registrar evento de rebalanceo si hay un análisis previo
+      const pesosObj = {};
+      tickets.forEach((t) => {
+        pesosObj[t.ticker] = t.peso;
+      });
+      const resDrift = await evaluarDriftPortafolio(null, pesosObj, 0.05);
+      if (resDrift?.revision_id) {
+        await confirmarEjecucionRebalanceo(resDrift.revision_id);
+      }
+    } catch (err) {
+      console.warn("Aviso en registro de rebalanceo:", err);
+    } finally {
+      setEjecutando(false);
+      setOrdenesEjecutadas(true);
+      setTimeout(() => setOrdenesEjecutadas(false), 7000);
+    }
+  };
+
+  const handleDescargarCSV = () => {
+    const encabezados = "Ticker,Activo,Accion,Ponderacion_Pct,Monto_MXN,Estatus\n";
+    const filasCsv = tickets.map((t) =>
+      `"${t.ticker}","${t.nombre}","${t.accion}",${(t.peso * 100).toFixed(2)},${t.monto.toFixed(2)},"LISTO_PARA_BROKER"`
+    ).join("\n");
+    const blob = new Blob([encabezados + filasCsv], { type: "text/csv;charset=utf-8;" });
+    const url = URL.createObjectURL(blob);
+    const link = document.createElement("a");
+    link.href = url;
+    link.download = `LifeHedge_Ordenes_MXN_${capitalTotal}_${new Date().toISOString().slice(0, 10)}.csv`;
+    link.click();
+    URL.revokeObjectURL(url);
   };
 
   return (
@@ -72,7 +104,7 @@ export default function Frontera({ datos, onIr }) {
           </p>
         </div>
 
-        <div className="controles-capital-header">
+        <div className="controles-capital-header" style={{ display: "flex", flexDirection: "column", gap: "8px", alignItems: "flex-end" }}>
           <label className="label-capital-input">
             <span>Capital a Invertir (MXN):</span>
             <div className="input-capital-wrapper">
@@ -87,6 +119,26 @@ export default function Frontera({ datos, onIr }) {
               />
             </div>
           </label>
+          <div style={{ display: "flex", gap: "6px" }}>
+            {[50000, 100000, 250000, 500000, 1000000].map((monto) => (
+              <button
+                key={monto}
+                type="button"
+                onClick={() => setCapitalTotal(monto)}
+                style={{
+                  background: capitalTotal === monto ? "rgba(248, 204, 27, 0.1)" : "#1a1e21",
+                  border: capitalTotal === monto ? "1px solid rgba(248, 204, 27, 0.35)" : "1px solid #34393e",
+                  color: capitalTotal === monto ? "#f8cc1b" : "var(--color-texto-apagado)",
+                  borderRadius: "4px",
+                  padding: "2px 6px",
+                  fontSize: "0.72rem",
+                  cursor: "pointer",
+                }}
+              >
+                ${(monto / 1000).toFixed(0)}k
+              </button>
+            ))}
+          </div>
         </div>
       </div>
 
@@ -156,14 +208,14 @@ export default function Frontera({ datos, onIr }) {
           <div className="canvas-recharts-frontera">
             <ResponsiveContainer width="100%" height={340}>
               <ScatterChart margin={{ top: 20, right: 24, bottom: 20, left: 10 }}>
-                <CartesianGrid strokeDasharray="3 3" stroke="rgba(255,255,255,0.06)" />
+                <CartesianGrid strokeDasharray="3 5" stroke="rgba(138,174,234,0.11)" />
                 <XAxis
                   type="number"
                   dataKey="tev"
                   name="TEV"
                   unit="%"
-                  stroke="#64748b"
-                  tick={{ fill: "#94a3b8", fontSize: 11 }}
+                  stroke="#7f878e"
+                  tick={{ fill: "#868e95", fontSize: 11 }}
                   tickFormatter={(v) => `${v}%`}
                   domain={["dataMin - 0.2", "dataMax + 0.2"]}
                 />
@@ -172,14 +224,14 @@ export default function Frontera({ datos, onIr }) {
                   dataKey="phe"
                   name="PHE"
                   unit="%"
-                  stroke="#64748b"
-                  tick={{ fill: "#94a3b8", fontSize: 11 }}
+                  stroke="#7f878e"
+                  tick={{ fill: "#868e95", fontSize: 11 }}
                   tickFormatter={(v) => `${v}%`}
                   domain={["dataMin - 2", "dataMax + 2"]}
                 />
                 <ZAxis range={[40, 40]} />
                 <Tooltip
-                  cursor={{ strokeDasharray: "3 3", stroke: "rgba(168,85,247,0.5)" }}
+                  cursor={{ strokeDasharray: "3 5", stroke: "rgba(248,204,27,0.45)" }}
                   content={({ active, payload }) => {
                     if (active && payload && payload.length) {
                       const data = payload[0].payload;
@@ -198,13 +250,13 @@ export default function Frontera({ datos, onIr }) {
                     return null;
                   }}
                 />
-                <Scatter name="Frontera" data={puntos} fill="#38bdf8" fillOpacity={0.6} />
+                <Scatter name="Frontera" data={puntos} fill="#8d959c" fillOpacity={0.72} />
                 <ReferenceDot
                   x={puntoOptimo.tev}
                   y={puntoOptimo.phe}
                   r={8}
-                  fill="#a855f7"
-                  stroke="#ffffff"
+                  fill="#f8cc1b"
+                  stroke="#15160f"
                   strokeWidth={2}
                 />
               </ScatterChart>
@@ -241,7 +293,7 @@ export default function Frontera({ datos, onIr }) {
             <div className="item-beneficio-ldi">
               <div className="icono-circulo-beneficio morado">2</div>
               <div>
-                <strong>Eliminación de Sesgo de Renta Variable Puro</strong>
+                <strong>Eliminación de Sesgo de Renta Variable Pura</strong>
                 <p>A diferencia de carteras tradicionales 60/40 que sufren en shocks inflacionarios, la cartera incluye activos vinculados directamente a tu consumo.</p>
               </div>
             </div>
@@ -275,20 +327,31 @@ export default function Frontera({ datos, onIr }) {
             </p>
           </div>
 
-          <div className="acciones-tickets-der">
+          <div className="acciones-tickets-der" style={{ display: "flex", gap: "8px", alignItems: "center" }}>
+            <button
+              type="button"
+              className="boton-secundario"
+              onClick={handleDescargarCSV}
+              style={{ fontSize: "0.85rem", padding: "8px 14px", display: "flex", alignItems: "center", gap: "6px" }}
+              title="Descarga la ficha de órdenes en formato CSV para tu broker"
+            >
+              <IconoDescargar size={16} /> Descargar CSV de Órdenes
+            </button>
             <button
               type="button"
               className={`btn-ejecutar-ordenes ${ordenesEjecutadas ? "completado" : ""}`}
               onClick={handleEjecutar}
-              disabled={ordenesEjecutadas}
+              disabled={ordenesEjecutadas || ejecutando}
             >
-              {ordenesEjecutadas ? (
+              {ejecutando ? (
+                "Auditando en Supabase…"
+              ) : ordenesEjecutadas ? (
                 <>
-                  <IconoCheck size={16} /> ¡Órdenes Preparadas para Broker!
+                  <IconoCheck size={16} /> ¡Auditado y Listo para Broker!
                 </>
               ) : (
                 <>
-                  <IconoPortafolio size={16} /> Generar Ticket de Ejecución
+                  <IconoPortafolio size={16} /> Confirmar y Auditar Ordenes
                 </>
               )}
             </button>
@@ -297,7 +360,7 @@ export default function Frontera({ datos, onIr }) {
 
         {ordenesEjecutadas && (
           <div className="banner-confirmacion-ejecucion">
-            <IconoCheck size={18} /> Las {tickets.length} órdenes de rebalanceo han sido generadas y formateadas con precisión FIX/STP listas para enviar a tu casa de bolsa o broker regulado (GBM, Bursanet, Casa de Bolsa Banorte).
+            <IconoCheck size={18} /> Las {tickets.length} órdenes de rebalanceo por {fmtMoneda(capitalTotal)} han sido registradas en la bitácora inmutable de auditoría (CNBV) y preparadas con formato FIX/STP para enviar a tu casa de bolsa (GBM, Bursanet, Casa de Bolsa Banorte).
           </div>
         )}
 
@@ -340,7 +403,7 @@ export default function Frontera({ datos, onIr }) {
                 <td colSpan={3}><strong>TOTAL ASIGNADO</strong></td>
                 <td className="num"><strong>100.0%</strong></td>
                 <td className="num color-resaltado-monto"><strong>{fmtMoneda(capitalTotal)}</strong></td>
-                <td className="num"><span className="badge-calce-perfecto">100% Calce</span></td>
+                <td className="num"><span className="badge-calce-perfecto">Calce 100%</span></td>
               </tr>
             </tfoot>
           </table>

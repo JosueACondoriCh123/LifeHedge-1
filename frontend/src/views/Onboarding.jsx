@@ -4,6 +4,7 @@ export default function Onboarding({ onPdf, onDemo, ocupado, error }) {
   return (
     <section className="onboarding">
       <div className="onboarding-intro">
+        <img src="/logo.png" alt="LifeHedge Logo" className="onboarding-brand-logo" />
         <h1>Invierte contra la inflación de tu canasta</h1>
         <p className="propuesta">
           LifeHedge lee tu estado de cuenta, mide la inflación de tu canasta real y

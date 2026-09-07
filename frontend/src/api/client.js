@@ -32,10 +32,11 @@ async function pedir(ruta, opciones = {}) {
   }
 
   if (respuesta.status === 401) {
-    // Token vencido o inválido: no tiene sentido reintentar ni mostrar el
-    // dashboard con datos que ya no se pueden refrescar.
-    alPerderSesion();
-    throw new Error("Tu sesión expiró. Vuelve a iniciar sesión.");
+    // Token vencido o inválido: sólo desloguear si no es una petición silenciosa
+    if (!opciones.silencioso) {
+      alPerderSesion();
+    }
+    throw new Error("Se requiere inicio de sesión para esta consulta.");
   }
 
   if (!respuesta.ok) {
@@ -73,12 +74,12 @@ export async function esperarBackend() {
   return false;
 }
 
-export const getUniverse = () => pedir("/market/universe");
+export const getUniverse = () => pedir("/market/universe", { silencioso: true });
 
-export function parseStatement(file) {
+export function parseStatement(file, useAi = false) {
   const datos = new FormData();
   datos.append("archivo", file); // el backend espera este nombre exacto
-  return pedir("/statement/parse", { method: "POST", body: datos });
+  return pedir(`/statement/parse?use_ai=${Boolean(useAi)}`, { method: "POST", body: datos });
 }
 
 export const getInflacion = (pesos) => pedir("/inflation/personal", json({ pesos }));
@@ -100,4 +101,63 @@ export const calcularTodo = async (pesos, buffer = 0.1, horizonte = 12) => {
   const data = await pedir("/analysis/run", json({ pesos, buffer, horizonte }));
   return { ...data, pesos };
 };
+
+/* --- Feeds Oficiales Banxico & INEGI --- */
+export const getBanxicoResumen = () => pedir("/api/banxico/resumen");
+export const getBanxicoSerie = (serieId) => pedir(`/api/banxico/series/${serieId}`);
+export const getBanxicoCatalogo = () => pedir("/api/banxico/catalogo");
+export const getInegiResumen = () => pedir("/api/inegi/resumen");
+export const getInegiInpc = () => pedir("/api/inegi/inpc");
+export const getInegiIndicador = (indicadorId) => pedir(`/api/inegi/indicador/${indicadorId}`);
+export const getInegiCatalogo = () => pedir("/api/inegi/catalogo");
+export const getFuentesEstado = () => pedir("/api/fuentes/estado");
+
+/* --- Motores Cuantitativos Avanzados LifeHedge --- */
+export const rebalancearCartera = (capitalTotal, portafolioActual, targetWeights, comisionPct = 0.0025, umbralDrift = 0.05) =>
+  pedir("/portfolio/rebalance", json({
+    capital_total: capitalTotal,
+    portafolio_actual: portafolioActual,
+    target_weights: targetWeights,
+    comision_broker_pct: comisionPct,
+    umbral_drift: umbralDrift,
+  }));
+
+export const ejecutarBacktest = (pesos, optimalWeights, mesesVentana = 36) =>
+  pedir("/portfolio/backtest", json({
+    pesos,
+    optimal_weights: optimalWeights,
+    meses_ventana: mesesVentana,
+  }));
+
+export const simularEstres = (pesos, optimalWeights) =>
+  pedir("/stress/simulate", json({
+    pesos,
+    optimal_weights: optimalWeights,
+  }));
+
+export const getStatementInsights = (transacciones, umbralHormiga = 120.0) =>
+  pedir("/statement/insights", json({
+    transacciones,
+    umbral_hormiga: umbralHormiga,
+  }));
+
+export const getReporteEjecutivo = (pesos, capitalTotal = 100000, buffer = 0.1, horizonte = 12, transacciones = []) =>
+  pedir("/report/executive", json({
+    pesos,
+    capital_total: capitalTotal,
+    buffer,
+    horizonte,
+    transacciones,
+  }));
+
+export const getSystemDiagnostics = () => pedir("/system/diagnostics");
+
+/* --- Acoplamiento Dinámico, Cartera Base INEGI y Ping en Vivo --- */
+export const getMatrizAcoplamiento = () => pedir("/market/coupling");
+export const getCarteraBase = (buffer = 0.1, horizonte = 12) =>
+  pedir(`/portfolio/baseline?buffer=${buffer}&horizonte=${horizonte}`);
+export const getDiagnosticoPing = () => pedir("/api/diagnostico/ping");
+export const getComparativeScenarios = (buffer = 0.1, horizonte = 12) =>
+  pedir(`/scenarios/comparative?buffer=${buffer}&horizonte=${horizonte}`);
+
 

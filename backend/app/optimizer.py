@@ -57,6 +57,12 @@ def optimizar(
     lam: float = 1.0,
 ) -> HedgeResult:
     sigma_a = np.asarray(sigma_a, dtype=float)
+    # Proyección simétrica y regularización espectral para estabilidad numérica
+    sigma_a = (sigma_a + sigma_a.T) / 2.0
+    w_eig, v_eig = np.linalg.eigh(sigma_a)
+    if np.any(w_eig < 1e-8):
+        sigma_a = v_eig @ np.diag(np.maximum(w_eig, 1e-8)) @ v_eig.T
+
     sigma_al = np.asarray(sigma_al, dtype=float)
     n = sigma_a.shape[0]
 

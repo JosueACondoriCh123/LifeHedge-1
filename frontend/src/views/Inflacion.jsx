@@ -12,25 +12,26 @@ import MetricCard from "../components/MetricCard.jsx";
 import StaleBadge from "../components/StaleBadge.jsx";
 import { fmtPct, fmtPctDetallado } from "../formato.js";
 import { ETIQUETAS_RUBRO, RUBROS } from "../rubros.js";
+import { useLanguage } from "../i18n/LanguageContext.jsx";
 
-function Delta({ inflacion }) {
+function Delta({ inflacion, t }) {
   const positivo = inflacion.delta_anualizado > 0;
   return (
     <MetricCard
-      etiqueta="Delta de Divergencia"
+      etiqueta={t("inflacion.divergenceDelta")}
       valor={fmtPctDetallado(inflacion.delta_anualizado)}
       tono={positivo ? "alerta" : "positivo"}
       nota={
         positivo
-          ? "Pagas más inflación que el promedio nacional"
-          : "Pagas menos inflación que el promedio nacional"
+          ? t("inflacion.moreInflation")
+          : t("inflacion.lessInflation")
       }
       destacada
     />
   );
 }
 
-function Canasta({ pesos, onConfirmar, ocupado, error }) {
+function Canasta({ pesos, onConfirmar, ocupado, error, t }) {
   const [valores, setValores] = useState(() =>
     Object.fromEntries(RUBROS.map((r) => [r, Math.round(pesos[r] * 100)]))
   );
@@ -52,16 +53,15 @@ function Canasta({ pesos, onConfirmar, ocupado, error }) {
   );
 
   return (
-    <section className="panel-editor" aria-label="Editar canasta">
-      <h3>Ajusta tu canasta</h3>
+    <section className="panel-editor" aria-label={t("inflacion.adjustBasketTitle")}>
+      <h3>{t("inflacion.adjustBasketTitle")}</h3>
       <p className="panel-nota">
-        Mueve los pesos y recalcula: el Delta de Divergencia y la cartera óptima
-        responden en vivo.
+        {t("inflacion.adjustBasketSubtitle")}
       </p>
       <div className="editor-sliders">
         {RUBROS.map((r) => (
           <label key={r} className="editor-fila">
-            <span>{ETIQUETAS_RUBRO[r]}</span>
+            <span>{t("rubros." + r, {}, ETIQUETAS_RUBRO[r])}</span>
             <input
               type="range"
               min="0"
@@ -86,7 +86,7 @@ function Canasta({ pesos, onConfirmar, ocupado, error }) {
           onConfirmar(Object.fromEntries(normalizados.map(({ rubro, peso }) => [rubro, peso])))
         }
       >
-        {ocupado ? "Recalculando…" : "Recalcular con esta canasta"}
+        {ocupado ? t("inflacion.recalculating") : t("inflacion.recalculateBtn")}
       </button>
     </section>
   );
@@ -100,6 +100,7 @@ export default function Inflacion({
 }) {
   const { inflacion } = datos;
   const { pesos } = datos;
+  const { t } = useLanguage();
 
   const serie = useMemo(
     () =>
@@ -122,61 +123,66 @@ export default function Inflacion({
   return (
     <div className="vista">
       <div className="vista-encabezado">
-        <h2>Tu inflación</h2>
+        <h2>{t("inflacion.title")}</h2>
         <StaleBadge stale={inflacion.stale} asOf={inflacion.as_of} />
       </div>
 
       <div className="rejilla-metricas cuatro">
         <MetricCard
-          etiqueta="Tu inflación anual"
+          etiqueta={t("inflacion.annualInflation")}
           valor={fmtPct(inflacion.personal_anual)}
-          nota="Canasta de tu estado de cuenta"
+          nota={t("inflacion.basketNote")}
         />
         <MetricCard
-          etiqueta="INPC oficial"
+          etiqueta={t("inflacion.officialInpc")}
           valor={fmtPct(inflacion.general_anual)}
-          nota="Promedio nacional (INEGI)"
+          nota={t("inflacion.nationalAvg")}
         />
-        <Delta inflacion={inflacion} />
+        <Delta inflacion={inflacion} t={t} />
         <MetricCard
-          etiqueta="Volatilidad de tu canasta"
+          etiqueta={t("inflacion.basketVolatility")}
           valor={fmtPct(inflacion.volatilidad_anual)}
-          nota="Variación anual de tu inflación"
+          nota={t("inflacion.annualVariation")}
         />
       </div>
 
-      <section className="panel-grafica" aria-label="Inflación personal contra INPC general">
-        <h3>Mensual: tu canasta vs. el país</h3>
+      <section className="panel-grafica" aria-label={t("inflacion.monthlyChartTitle")}>
+        <h3>{t("inflacion.monthlyChartTitle")}</h3>
         <div className="alto-grafica">
           <ResponsiveContainer width="100%" height="100%">
             <LineChart data={serie} margin={{ top: 8, right: 16, bottom: 0, left: 0 }}>
-              <CartesianGrid stroke="var(--linea)" vertical={false} />
-              <XAxis dataKey="mes" minTickGap={40} tick={{ fontSize: 12 }} stroke="var(--tinta-suave)" />
+              <CartesianGrid stroke="var(--linea)" strokeDasharray="3 5" vertical={false} />
+              <XAxis dataKey="mes" minTickGap={40} tick={{ fontSize: 12 }} stroke="var(--tinta-suave)" tickLine={false} axisLine={false} />
               <YAxis
                 tick={{ fontSize: 12 }}
                 stroke="var(--tinta-suave)"
                 tickFormatter={(v) => `${v.toFixed(1)}%`}
                 width={52}
+                tickLine={false}
+                axisLine={false}
               />
               <Tooltip
-                formatter={(valor, nombre) => [`${valor.toFixed(2)}%`, nombre === "personal" ? "Tu canasta" : "INPC general"]}
-                labelFormatter={(mes) => `Mes ${mes}`}
+                formatter={(valor, nombre) => [
+                  `${valor.toFixed(2)}%`,
+                  nombre === "personal" ? t("inflacion.yourBasketLabel") : t("inflacion.cpiLabel"),
+                ]}
+                labelFormatter={(mes) => `${t("inflacion.monthPrefix")} ${mes}`}
               />
-              <Line type="monotone" dataKey="personal" name="personal" stroke="var(--alerta)" strokeWidth={1.8} dot={false} />
-              <Line type="monotone" dataKey="general" name="general" stroke="var(--azul-apagado)" strokeWidth={1.8} dot={false} />
+              <Line type="linear" dataKey="personal" name="personal" stroke="var(--alerta)" strokeWidth={2.1} dot={false} activeDot={{ r: 4 }} />
+              <Line type="linear" dataKey="general" name="general" stroke="var(--azul-apagado)" strokeWidth={2.1} dot={false} activeDot={{ r: 4 }} />
             </LineChart>
           </ResponsiveContainer>
         </div>
       </section>
 
       <div className="columnas">
-        <section className="panel" aria-label="Desglose de tu canasta">
-          <h3>Tu canasta de gasto</h3>
+        <section className="panel" aria-label={t("inflacion.spendingBasketTitle")}>
+          <h3>{t("inflacion.spendingBasketTitle")}</h3>
           <ul className="canasta-barras">
             {canastaOrdenada.map(([rubro, peso]) => (
               <li key={rubro}>
                 <div className="canasta-fila">
-                  <span>{ETIQUETAS_RUBRO[rubro] ?? rubro}</span>
+                  <span>{t("rubros." + rubro, {}, ETIQUETAS_RUBRO[rubro] ?? rubro)}</span>
                   <span className="num">{fmtPct(peso)}</span>
                 </div>
                 <div className="barra-fondo">
@@ -192,6 +198,7 @@ export default function Inflacion({
           onConfirmar={onCanasta}
           ocupado={ocupadoEditor}
           error={errorEditor}
+          t={t}
         />
       </div>
     </div>

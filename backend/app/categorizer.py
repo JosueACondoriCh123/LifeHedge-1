@@ -13,7 +13,10 @@ REGLAS: tuple[tuple[str, tuple[str, ...]], ...] = (
             "OXXO", "SORIANA", "WALMART", "BODEGA AURRERA", "CHEDRAUI", "LA COMER",
             "SUPERAMA", "COSTCO", "SAMS", "TORTILLERIA", "CARNICERIA", "FRUTERIA",
             "MERCADO", "RESTAURANTE", "TAQUERIA", "STARBUCKS", "RAPPI", "DIDI FOOD",
-            "UBER EATS", "SEVEN ELEVEN", "7 ELEVEN", "CIRCULO K",
+            "UBER EATS", "SEVEN ELEVEN", "7 ELEVEN", "CIRCULO K", "TIENDAS 3B",
+            "TIENDA 3B", "NETO", "SUPER NETO", "CITY MARKET", "FRESKO", "HEB",
+            "CARLS JR", "MC DONALDS", "BURGER KING", "KFC", "VIPS", "TOKS",
+            "SANBORNS", "DOMINOS", "LITTLE CAESARS", "CHILIS",
         ),
     ),
     (
@@ -22,6 +25,7 @@ REGLAS: tuple[tuple[str, tuple[str, ...]], ...] = (
             "CFE", "RENTA", "ARRENDAMIENTO", "AGUA", "JAPAC", "SACMEX", "GAS NATURAL",
             "GAS LP", "TELMEX", "TOTALPLAY", "IZZI", "MEGACABLE", "PREDIAL",
             "MANTENIMIENTO CONDOMINIO", "HIPOTECA", "INFONAVIT", "HOME DEPOT",
+            "COPPEL HOGAR", "ELEKTRA", "SODIMAC", "INTERCERAMIC", "NATURGY", "ENGIE",
         ),
     ),
     (
@@ -30,6 +34,8 @@ REGLAS: tuple[tuple[str, tuple[str, ...]], ...] = (
             "UBER", "DIDI", "CABIFY", "PEMEX", "GASOLINERA", "BP", "SHELL", "MOBIL",
             "TAG IAVE", "PASE URBANO", "ESTACIONAMIENTO", "METRO", "AUTOBUS", "ADO",
             "AEROMEXICO", "VOLARIS", "VIVA AEROBUS", "TALLER MECANICO", "VERIFICACION",
+            "TELEVIA", "CASETA", "CAPUFE", "METROBUS", "SUBURBANO", "DIESEL", "G500",
+            "REPSOL", "AUTOZONE",
         ),
     ),
     (
@@ -37,7 +43,8 @@ REGLAS: tuple[tuple[str, tuple[str, ...]], ...] = (
         (
             "FARMACIA", "SIMILARES", "BENAVIDES", "GUADALAJARA", "SAN PABLO", "HOSPITAL",
             "CLINICA", "LABORATORIO", "DENTISTA", "CONSULTORIO", "OPTICA", "IMSS",
-            "SEGURO GASTOS MEDICOS",
+            "SEGURO GASTOS MEDICOS", "FARMACIAS DEL AHORRO", "DEL AHORRO", "CHOPO",
+            "MEDICA SUR", "ANGELES", "STAR MEDICA", "GNP SEGUROS", "METLIFE", "AXA",
         ),
     ),
     (
@@ -45,6 +52,8 @@ REGLAS: tuple[tuple[str, tuple[str, ...]], ...] = (
         (
             "COLEGIATURA", "UNIVERSIDAD", "INSTITUTO", "COLEGIO", "ESCUELA", "KINDER",
             "PAPELERIA", "LIBRERIA", "GANDHI", "UDEMY", "COURSERA", "INSCRIPCION",
+            "PLATZI", "DOMESTIKA", "DUOLINGO", "OPEN ENGLISH", "CREHANA", "TECMILENIO",
+            "ITESM", "UNAM", "IPN", "UVM", "IBERO", "ANAHUAC",
         ),
     ),
 )

@@ -1,5 +1,5 @@
 <p align="center">
-  <img src="docs/assets/logo.png" alt="LifeHedge Logo" width="170" style="border-radius: 50%; box-shadow: 0 4px 20px rgba(0,0,0,0.3);" />
+  <img src="docs/assets/logo.png" alt="LifeHedge Logo" width="180" style="border-radius: 18px; border: 1px solid rgba(255, 255, 255, 0.15); box-shadow: 0 10px 30px rgba(0, 0, 0, 0.6);" />
 </p>
 
 <h1 align="center">LifeHedge</h1>

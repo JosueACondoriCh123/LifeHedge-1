@@ -104,6 +104,29 @@ def usuario_actual(request: Request) -> Usuario:
     return Usuario(id=sub, email=claims.get("email"))
 
 
+def usuario_opcional(request: Request) -> Usuario | None:
+    """Permite el acceso a endpoints públicos pero extrae el usuario si viene el token."""
+    encabezado = request.headers.get("authorization", "")
+    if not encabezado.lower().startswith("bearer "):
+        return None
+    try:
+        token = encabezado.split(" ", 1)[1].strip()
+        clave, algoritmos = _clave_y_algoritmo(token)
+        claims = jwt.decode(
+            token,
+            clave,
+            algorithms=algoritmos,
+            audience="authenticated",
+        )
+        sub = claims.get("sub")
+        if not sub:
+            return None
+        return Usuario(id=sub, email=claims.get("email"))
+    except Exception:
+        return None
+
+
+
 class LimitadorPorUsuario:
     """Ventana móvil en memoria para proteger cálculos costosos."""
 

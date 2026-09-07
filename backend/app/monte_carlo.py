@@ -90,13 +90,13 @@ def resumir(paths_cartera: np.ndarray, paths_pasivo: np.ndarray) -> RiskSummary:
     final = razon[:, -1]
     # Pérdida positiva = poder adquisitivo perdido al cierre del horizonte.
     perdidas = 1.0 - final
-    var_95 = float(np.percentile(perdidas, 95))
+    var_95 = float(np.nan_to_num(np.percentile(perdidas, 95), nan=0.0))
     cola = perdidas[perdidas >= var_95]
-    cvar_95 = float(cola.mean()) if cola.size else var_95
+    cvar_95 = float(np.nan_to_num(cola.mean(), nan=var_95)) if cola.size else var_95
 
     return RiskSummary(
         percentiles=percentiles,
         var_95=var_95,
         cvar_95=cvar_95,
-        media_final=float(final.mean()),
+        media_final=float(np.nan_to_num(final.mean(), nan=1.0)),
     )

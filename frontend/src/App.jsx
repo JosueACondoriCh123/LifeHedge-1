@@ -2,6 +2,7 @@ import { useCallback, useEffect, useMemo, useState } from "react";
 import {
   calcularTodo,
   esperarBackend,
+  getCarteraBase,
   optimizar,
   parseStatement,
   simular,
@@ -11,9 +12,11 @@ import { SesionProvider, useSesion } from "./auth/SesionProvider.jsx";
 import { guardarAnalisis } from "./datos/analisis.js";
 import demoData from "./data/demoData.json";
 import { RUTAS_PRODUCTO } from "./rutas-producto.jsx";
+import Acceso from "./views/Acceso.jsx";
 import Alertas from "./views/Alertas.jsx";
 import Cobertura from "./views/Cobertura.jsx";
 import Inflacion from "./views/Inflacion.jsx";
+import Landing from "./views/Landing.jsx";
 import Onboarding from "./views/Onboarding.jsx";
 import Reporte from "./views/Reporte.jsx";
 import Riesgo from "./views/Riesgo.jsx";
@@ -34,13 +37,14 @@ import {
   IconoSubir,
   IconoFrontera,
   IconoAsesorIA,
+  IconoCandado,
 } from "./components/Iconos.jsx";
 
 const RUTAS_BASE = [
   { id: "onboarding", etiqueta: "Cargar PDF", grupo: "oculta", privada: false, icono: "subir" },
   { id: "inflacion", etiqueta: "Tu Inflación", grupo: "analisis", privada: false, icono: "inflacion" },
   { id: "cobertura", etiqueta: "Cobertura LDI", grupo: "analisis", privada: false, icono: "portafolio" },
-  { id: "riesgo", etiqueta: "Simulación Riesgo", grupo: "analisis", privada: false, icono: "riesgo" },
+  { id: "riesgo", etiqueta: "Simulación de Riesgo", grupo: "analisis", privada: false, icono: "riesgo" },
   { id: "alertas", etiqueta: "Alertas", grupo: "oculta", privada: false, icono: "alertas" },
   { id: "reporte", etiqueta: "Reporte PDF", grupo: "oculta", privada: false, icono: "reporte" },
 ];
@@ -74,23 +78,28 @@ const RUTAS_ORDENADAS = [
   ...RUTAS_PRODUCTO.filter((r) => r.grupo === "oculta"),
 ].filter(Boolean);
 
+import { LanguageProvider, useLanguage } from "./i18n/LanguageContext.jsx";
+
 export default function App() {
   return (
-    <SesionProvider>
-      <Aplicacion />
-    </SesionProvider>
+    <LanguageProvider>
+      <SesionProvider>
+        <Aplicacion />
+      </SesionProvider>
+    </LanguageProvider>
   );
 }
 
 function Aplicacion() {
   const { hayCuentas, cargando: cargandoSesion, sesion, usuario, salir } = useSesion();
+  const { idioma, cambiarIdioma, t, esIngles, esEspanol } = useLanguage();
   const [guardando, setGuardando] = useState(false);
   const [avisoGuardado, setAvisoGuardado] = useState(null);
 
   const [backendListo, setBackendListo] = useState(false);
   const [pesos, setPesos] = useState(demoData.pesos);
   const [datos, setDatos] = useState(demoData);
-  const [vista, setVista] = useState("dashboard"); // Vista por defecto estilo Helios
+  const [vista, setVista] = useState("landing");
   const [horizonte, setHorizonte] = useState(12);
   const [buffer, setBuffer] = useState(0.1);
 
@@ -108,7 +117,20 @@ function Aplicacion() {
   const alertasActivas = alertas.filter((alerta) => alerta.severidad !== "info").length;
 
   useEffect(() => {
-    esperarBackend().then(setBackendListo);
+    esperarBackend().then(async (listo) => {
+      setBackendListo(listo);
+      if (listo) {
+        try {
+          const baseline = await getCarteraBase(buffer, horizonte);
+          if (baseline?.pesos && baseline?.optimo) {
+            setPesos(baseline.pesos);
+            setDatos(baseline);
+          }
+        } catch {
+          // Si falla, se mantiene la estructura inicial
+        }
+      }
+    });
   }, []);
 
   const usarPdf = async (archivo) => {
@@ -130,10 +152,21 @@ function Aplicacion() {
     setOcupadoFlujo(true);
     setErrorPdf(null);
     try {
-      setPesos(demoData.pesos);
-      setDatos(await calcularTodo(demoData.pesos, buffer, horizonte));
+      const baseline = await getCarteraBase(buffer, horizonte);
+      if (baseline?.pesos && baseline?.optimo) {
+        setPesos(baseline.pesos);
+        setDatos(baseline);
+      } else {
+        setPesos(demoData.pesos);
+        setDatos(await calcularTodo(demoData.pesos, buffer, horizonte));
+      }
     } catch {
-      setDatos(demoData);
+      try {
+        setPesos(demoData.pesos);
+        setDatos(await calcularTodo(demoData.pesos, buffer, horizonte));
+      } catch {
+        setDatos(demoData);
+      }
     } finally {
       setOcupadoFlujo(false);
       setVista("dashboard");
@@ -254,12 +287,34 @@ function Aplicacion() {
     usuario?.user_metadata?.nombre ||
     (usuario?.email ? usuario.email.split("@")[0] : "Invitado");
 
+  if (vista === "landing") {
+    return (
+      <Landing
+        onExplorar={() => setVista(sesion ? "dashboard" : "acceso")}
+        onAnalizar={() => setVista(sesion ? "onboarding" : "registro")}
+        onAcceso={() => setVista("acceso")}
+        onRegistro={() => setVista("registro")}
+      />
+    );
+  }
+
   if (cargandoSesion) {
     return (
       <div className="pantalla-carga-global">
         <div className="spinner-neon" />
-        <p>Iniciando entorno cuantitativo LifeHedge…</p>
+        <p>{t("layout.loadingApp")}</p>
       </div>
+    );
+  }
+
+  // Si no hay sesión iniciada, el dashboard y todas las pantallas protegidas están estrictamente bloqueadas
+  if (!sesion) {
+    return (
+      <Acceso
+        modoInicial={vista === "registro" ? "registrar" : "entrar"}
+        onListo={() => setVista("dashboard")}
+        onCancelar={() => setVista("landing")}
+      />
     );
   }
 
@@ -269,16 +324,16 @@ function Aplicacion() {
       <aside className="sidebar-helios">
         <div className="sidebar-marca" onClick={() => setVista("dashboard")}>
           <div className="marca-logo-glifo">
-            <span className="glifo-h">⬡</span>
+            <img src="/logo.png" alt="LifeHedge Logo" className="marca-logo-img" />
           </div>
           <div className="marca-texto">
             <span className="marca-titulo">LifeHedge</span>
-            <span className="marca-subtitulo">LDI Wealth OS</span>
+            <span className="marca-subtitulo">{t("layout.brandSub")}</span>
           </div>
         </div>
 
         <div className="sidebar-menu-scroll">
-          <div className="menu-seccion-titulo">ANÁLISIS LDI</div>
+          <div className="menu-seccion-titulo">{t("layout.ldiAnalysis")}</div>
           <nav className="menu-nav">
             {RUTAS_ORDENADAS.filter((r) => r.grupo === "analisis").map((r) => {
               const Icono = MAPA_ICONOS[r.icono || r.id] || IconoDashboard;
@@ -293,14 +348,14 @@ function Aplicacion() {
                   <span className="nav-icono">
                     <Icono size={18} />
                   </span>
-                  <span className="nav-texto">{r.etiqueta}</span>
+                  <span className="nav-texto">{t("nav." + r.id, {}, r.etiqueta)}</span>
                   {activo && <span className="pill-activo-glow" />}
                 </button>
               );
             })}
           </nav>
 
-          <div className="menu-seccion-titulo">PORTAFOLIO & CUENTA</div>
+          <div className="menu-seccion-titulo">{t("layout.portfolioAccount")}</div>
           <nav className="menu-nav">
             {RUTAS_ORDENADAS.filter((r) => r.grupo === "cuenta").map((r) => {
               const Icono = MAPA_ICONOS[r.icono || r.id] || IconoHistorial;
@@ -315,7 +370,7 @@ function Aplicacion() {
                   <span className="nav-icono">
                     <Icono size={18} />
                   </span>
-                  <span className="nav-texto">{r.etiqueta}</span>
+                  <span className="nav-texto">{t("nav." + r.id, {}, r.etiqueta)}</span>
                   {activo && <span className="pill-activo-glow" />}
                 </button>
               );
@@ -328,7 +383,7 @@ function Aplicacion() {
               <span className="nav-icono">
                 <IconoSubir size={18} />
               </span>
-              <span className="nav-texto">Cargar Estado PDF</span>
+              <span className="nav-texto">{t("layout.uploadStatement")}</span>
             </button>
           </nav>
         </div>
@@ -346,13 +401,27 @@ function Aplicacion() {
               </div>
             </div>
           ) : (
-            <button
-              type="button"
-              className="btn-login-sidebar"
-              onClick={() => setVista("acceso")}
-            >
-              Iniciar Sesión / Registro
-            </button>
+            <div style={{ display: "flex", flexDirection: "column", gap: "6px" }}>
+              <button
+                type="button"
+                className="btn-login-sidebar"
+                onClick={() => setVista("acceso")}
+              >
+                {t("layout.signIn")}
+              </button>
+              <button
+                type="button"
+                className="btn-login-sidebar"
+                style={{
+                  background: "rgba(59, 167, 255, 0.15)",
+                  borderColor: "rgba(59, 167, 255, 0.38)",
+                  color: "#ffffff"
+                }}
+                onClick={() => setVista("registro")}
+              >
+                {t("layout.signUp")}
+              </button>
+            </div>
           )}
         </div>
       </aside>
@@ -363,21 +432,69 @@ function Aplicacion() {
           <div className="header-izq">
             <span className="breadcrumb-seccion">LifeHedge</span>
             <span className="breadcrumb-sep">/</span>
-            <span className="breadcrumb-actual">{rutaActiva.etiqueta}</span>
+            <span className="breadcrumb-actual">{t("nav." + rutaActiva.id, {}, rutaActiva.etiqueta)}</span>
           </div>
 
           <div className="header-der">
+            {/* Selector Rápido de Idioma */}
+            <div
+              className="selector-idioma-pill"
+              style={{
+                display: "inline-flex",
+                alignItems: "center",
+                background: "rgba(255, 255, 255, 0.04)",
+                border: "1px solid var(--color-borde)",
+                borderRadius: "20px",
+                padding: "2px 3px",
+              }}
+            >
+              <button
+                type="button"
+                style={{
+                  background: esEspanol ? "rgba(59, 167, 255, 0.25)" : "transparent",
+                  color: esEspanol ? "#ffffff" : "var(--color-texto-apagado)",
+                  border: "none",
+                  borderRadius: "14px",
+                  padding: "3px 8px",
+                  fontSize: "0.72rem",
+                  fontWeight: esEspanol ? 700 : 500,
+                  cursor: "pointer",
+                }}
+                onClick={() => cambiarIdioma("es")}
+                title="Cambiar a Español"
+              >
+                ES
+              </button>
+              <button
+                type="button"
+                style={{
+                  background: esIngles ? "rgba(59, 167, 255, 0.25)" : "transparent",
+                  color: esIngles ? "#ffffff" : "var(--color-texto-apagado)",
+                  border: "none",
+                  borderRadius: "14px",
+                  padding: "3px 8px",
+                  fontSize: "0.72rem",
+                  fontWeight: esIngles ? 700 : 500,
+                  cursor: "pointer",
+                }}
+                onClick={() => cambiarIdioma("en")}
+                title="Switch to English"
+              >
+                EN
+              </button>
+            </div>
+
             {/* Estado del Backend */}
             <div className={`status-backend-pill ${backendListo ? "conectado" : "calentando"}`}>
               <span className="pulso-dot" />
-              <span>{backendListo ? "Motor LDI En Línea" : "Calentando Motor…"}</span>
+              <span>{backendListo ? t("layout.ldiOnline") : t("layout.warmingEngine")}</span>
             </div>
 
             {/* Alertas */}
             <button
               type="button"
               className="btn-icono-header"
-              aria-label="Ver Alertas"
+              aria-label={t("layout.viewAlerts")}
               onClick={() => setVista("alertas")}
             >
               <IconoAlertas size={18} />
@@ -416,7 +533,7 @@ function Aplicacion() {
         <main className="area-vistas-scroll">
           {bloqueadaPorSesion ? (
             <section className="panel-bloqueo-sesion">
-              <div className="candado-icono">🔒</div>
+              <div className="candado-icono"><IconoCandado size={32} /></div>
               <h2>Sección Exclusiva para Miembros</h2>
               <p>Inicia sesión o crea una cuenta para acceder a tu historial y comparar escenarios.</p>
               <button
@@ -469,6 +586,8 @@ function Aplicacion() {
                   alertas={alertas}
                   revision={revision}
                   onRevisar={marcarRevisado}
+                  datos={datos}
+                  onIr={setVista}
                 />
               )}
               {vista === "reporte" && (

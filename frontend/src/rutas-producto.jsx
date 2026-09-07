@@ -36,7 +36,7 @@ export const RUTAS_PRODUCTO = [
   },
   {
     id: "asesoria",
-    etiqueta: "Asesor IA",
+    etiqueta: "Asesor Patrimonial",
     grupo: "analisis",
     icono: "asesoria",
     privada: false,
@@ -68,7 +68,7 @@ export const RUTAS_PRODUCTO = [
   },
   {
     id: "transacciones",
-    etiqueta: "Extracto PDF",
+    etiqueta: "Extractor de Cuenta",
     grupo: "analisis",
     icono: "transacciones",
     privada: false,
@@ -83,11 +83,20 @@ export const RUTAS_PRODUCTO = [
   },
   {
     id: "simulador",
-    etiqueta: "Estrés Macro",
+    etiqueta: "Pruebas de Estrés",
     grupo: "analisis",
     icono: "simulador",
     privada: false,
-    render: (ctx) => <Simulador datos={ctx.datos} onIr={ctx.irA} />,
+    render: (ctx) => (
+      <Simulador
+        datos={ctx.datos}
+        onIr={ctx.irA}
+        onAplicarAjuste={(nuevosPesos) => {
+          ctx.setPesos(nuevosPesos);
+          ctx.irA("cobertura");
+        }}
+      />
+    ),
   },
   {
     id: "historial",
@@ -113,10 +122,19 @@ export const RUTAS_PRODUCTO = [
   {
     id: "comparar",
     etiqueta: "Comparar",
-    grupo: "cuenta",
+    grupo: "analisis",
     icono: "comparar",
-    privada: true,
-    render: () => <Comparar />,
+    privada: false,
+    render: (ctx) => (
+      <Comparar
+        datosActuales={ctx.datos}
+        onIr={ctx.irA}
+        onCargarEnPortafolio={(pesos) => {
+          ctx.setPesos(pesos);
+          ctx.irA("dashboard");
+        }}
+      />
+    ),
   },
   {
     id: "cuenta",
@@ -128,10 +146,18 @@ export const RUTAS_PRODUCTO = [
   },
   {
     id: "acceso",
-    etiqueta: "Entrar",
+    etiqueta: "Iniciar Sesión",
     grupo: "oculta",
     icono: "cuenta",
     privada: false,
-    render: (ctx) => <Acceso onListo={() => ctx.irA("dashboard")} />,
+    render: (ctx) => <Acceso onListo={() => ctx.irA("dashboard")} modoInicial="entrar" />,
+  },
+  {
+    id: "registro",
+    etiqueta: "Crear Cuenta",
+    grupo: "oculta",
+    icono: "cuenta",
+    privada: false,
+    render: (ctx) => <Acceso onListo={() => ctx.irA("dashboard")} modoInicial="registrar" />,
   },
 ];

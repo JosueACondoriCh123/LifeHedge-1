@@ -83,6 +83,8 @@ class Settings(BaseSettings):
     supabase_jwt_secret: str | None = None
     # URL del proyecto: de aquí sale el JWKS con la clave pública ES256.
     supabase_url: str | None = None
+    openrouter_api_key: str | None = None
+    openrouter_statement_model: str = "minimax/minimax-m3:free"
     cors_origins_raw: str = "http://localhost:5173"
     market_ttl_seconds: int = 60 * 60 * 24
     inpc_ttl_seconds: int = 60 * 60 * 24 * 7

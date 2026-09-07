@@ -10,6 +10,7 @@ import {
 } from "recharts";
 import { fmtPct, fmtPctConSigno } from "../formato.js";
 import { TICKER_LABELS } from "../cartera.js";
+import { useLanguage } from "../i18n/LanguageContext.jsx";
 import {
   IconoPortafolio,
   IconoInflacion,
@@ -21,18 +22,25 @@ import {
 export default function Dashboard({
   datos,
   usuario,
-  onIr,
-  onAbrirModalSubir
+  onIr
 }) {
   const [periodo, setPeriodo] = useState("1A");
+  const { t, esIngles } = useLanguage();
 
-  const nombreUsuario = usuario?.user_metadata?.nombre || (usuario?.email ? usuario.email.split("@")[0] : "Inversionista");
+  const nombreUsuario = usuario?.user_metadata?.nombre || (usuario?.email ? usuario.email.split("@")[0] : (esIngles ? "Investor" : "Inversionista"));
 
-  // Métricas extraídas del análisis activo
-  const delta = datos?.inflacion?.delta_anualizado ?? 0.012;
-  const phe = datos?.optimo?.phe ?? 0.895;
-  const buffer = datos?.optimo?.benchmark_cetes ? 0.10 : 0.10;
-  const var95 = datos?.riesgo?.var_95 ?? -0.038;
+  // Métricas extraídas del análisis activo, sin valores demostrativos inventados.
+  const delta = datos?.inflacion?.delta_anualizado ?? 0;
+  const inflacionPersonal = datos?.inflacion?.personal_anual ?? 0;
+  const inflacionGeneral = datos?.inflacion?.general_anual ?? 0;
+  const phe = datos?.optimo?.phe ?? 0;
+  const pheCetes = datos?.optimo?.benchmark_cetes?.phe ?? 0;
+  const var95 = datos?.riesgo?.var_95 ?? 0;
+
+  const indiceCetes = datos?.optimo?.assets?.findIndex((asset) =>
+    (asset.ticker || asset) === "CETES28"
+  ) ?? -1;
+  const buffer = indiceCetes >= 0 ? (datos?.optimo?.weights?.[indiceCetes] ?? 0) : 0;
 
   // Activos con pesos asignados
   const activos = useMemo(() => {
@@ -44,35 +52,54 @@ export default function Dashboard({
     })).filter(a => a.peso > 0.001);
   }, [datos]);
 
-  // Datos para la gráfica principal de desempeño/inflación
-  const datosGrafica = useMemo(() => {
+  // Convierte las variaciones mensuales observadas en índices acumulados comparables.
+  const datosGraficaCompleta = useMemo(() => {
     if (datos?.inflacion?.dates && datos?.inflacion?.personal && datos?.inflacion?.general) {
-      return datos.inflacion.dates.map((d, i) => ({
-        fecha: d.length > 7 ? d.substring(0, 7) : d,
-        personal: Number((datos.inflacion.personal[i] * 100).toFixed(2)),
-        general: Number((datos.inflacion.general[i] * 100).toFixed(2)),
-      }));
+      let personal = 100;
+      let general = 100;
+
+      return datos.inflacion.dates.map((d, i) => {
+        if (i > 0) {
+          personal *= 1 + (Number(datos.inflacion.personal[i]) || 0);
+          general *= 1 + (Number(datos.inflacion.general[i]) || 0);
+        }
+
+        return {
+          fecha: d.length > 7 ? d.substring(0, 7) : d,
+          personal: Number(personal.toFixed(2)),
+          general: Number(general.toFixed(2)),
+        };
+      });
     }
-    // Fallback elegante si faltan fechas
-    return [
-      { fecha: "Ene", personal: 4.8, general: 4.2 },
-      { fecha: "Mar", personal: 5.1, general: 4.3 },
-      { fecha: "May", personal: 5.4, general: 4.5 },
-      { fecha: "Jul", personal: 5.8, general: 4.6 },
-      { fecha: "Sep", personal: 6.0, general: 4.7 },
-      { fecha: "Nov", personal: 6.2, general: 4.8 },
-      { fecha: "Ene '26", personal: 6.4, general: 4.9 },
-    ];
+    return [];
   }, [datos]);
+
+  const datosGrafica = useMemo(() => {
+    const ventanas = { "6M": 6, "1A": 12, "3A": 36, "Histórico": Infinity };
+    const meses = ventanas[periodo] ?? 12;
+    const recorte = Number.isFinite(meses)
+      ? datosGraficaCompleta.slice(-Math.min(meses + 1, datosGraficaCompleta.length))
+      : datosGraficaCompleta;
+
+    if (!recorte.length) return [];
+    const basePersonal = recorte[0].personal || 100;
+    const baseGeneral = recorte[0].general || 100;
+
+    return recorte.map((punto) => ({
+      ...punto,
+      personal: Number(((punto.personal / basePersonal) * 100).toFixed(2)),
+      general: Number(((punto.general / baseGeneral) * 100).toFixed(2)),
+    }));
+  }, [datosGraficaCompleta, periodo]);
 
   return (
     <div className="dashboard-container">
       {/* Saludo Superior y Barra de Búsqueda / Acciones */}
       <div className="dashboard-top-bar">
         <div className="saludo-bloque">
-          <h1 className="saludo-titulo">Hola de nuevo, {nombreUsuario} 👋</h1>
+          <h1 className="saludo-titulo">{t("dashboard.welcome", { name: nombreUsuario })}</h1>
           <p className="saludo-subtitulo">
-            Monitoreo en tiempo real de tu portafolio de cobertura contra la inflación real.
+            {t("dashboard.subtitle")}
           </p>
         </div>
 
@@ -82,21 +109,21 @@ export default function Dashboard({
             className="btn-accion-rapida activa"
             onClick={() => onIr("inflacion")}
           >
-            <IconoInflacion size={16} /> Tu Canasta
+            <IconoInflacion size={16} /> {t("dashboard.yourBasket")}
           </button>
           <button
             type="button"
             className="btn-accion-rapida"
             onClick={() => onIr("cobertura")}
           >
-            <IconoPortafolio size={16} /> Portafolio LDI
+            <IconoPortafolio size={16} /> {t("dashboard.ldiPortfolio")}
           </button>
           <button
             type="button"
             className="btn-accion-rapida"
             onClick={() => onIr("acoplamiento")}
           >
-            <IconoAcoplamiento size={16} /> Acoplamiento
+            <IconoAcoplamiento size={16} /> {t("dashboard.coupling")}
           </button>
         </div>
       </div>
@@ -105,51 +132,53 @@ export default function Dashboard({
       <div className="metricas-grid">
         <div className="tarjeta-metrica card-glow-morado">
           <div className="metrica-header">
-            <span className="metrica-titulo">Canasta Anualizada</span>
+            <span className="metrica-titulo">{t("dashboard.basketInflation")}</span>
             <span className="pill-badge pill-morado">{periodo}</span>
           </div>
-          <div className="metrica-cifra-principal">$ 148,200 <span className="moneda">MXN</span></div>
+          <div className="metrica-cifra-principal">{fmtPct(inflacionPersonal)}</div>
           <div className="metrica-footer">
-            <span className="tag-positivo">Cobertura LDI Activa</span>
-            <span className="metrica-detalle">6 rubros ponderados</span>
+            <span className="tag-positivo">{t("dashboard.ldiActive")}</span>
+            <span className="metrica-detalle">{t("dashboard.generalInpc")}: {fmtPct(inflacionGeneral)}</span>
           </div>
         </div>
 
         <div className="tarjeta-metrica card-glow-ambar">
           <div className="metrica-header">
-            <span className="metrica-titulo">Divergencia (Delta)</span>
+            <span className="metrica-titulo">{t("dashboard.deltaTitle")}</span>
             <span className="pill-badge pill-ambar">vs INPC</span>
           </div>
           <div className="metrica-cifra-principal">{fmtPctConSigno(delta)}</div>
           <div className="metrica-footer">
             <span className={delta > 0 ? "tag-alerta" : "tag-positivo"}>
-              {delta > 0 ? "Tu canasta sube más" : "Menor al promedio"}
+              {delta > 0 ? t("dashboard.basketRisesMore") : t("dashboard.basketRisesLess")}
             </span>
-            <span className="metrica-detalle">Brecha de poder adquisitivo</span>
+            <span className="metrica-detalle">{t("dashboard.purchasingPowerGap")}</span>
           </div>
         </div>
 
         <div className="tarjeta-metrica card-glow-esmeralda">
           <div className="metrica-header">
-            <span className="metrica-titulo">Eficiencia de Cobertura (PHE)</span>
+            <span className="metrica-titulo">{t("dashboard.pheTitle")}</span>
             <span className="pill-badge pill-esmeralda">Óptimo QP</span>
           </div>
           <div className="metrica-cifra-principal">{fmtPct(phe)}</div>
           <div className="metrica-footer">
-            <span className="tag-positivo">+14.2% vs Cetes puro</span>
-            <span className="metrica-detalle">Protección contra tu pasivo</span>
+            <span className={phe >= pheCetes ? "tag-positivo" : "tag-alerta"}>
+              {fmtPctConSigno(phe - pheCetes)} {t("dashboard.vsPureCetes")}
+            </span>
+            <span className="metrica-detalle">{t("dashboard.liabilityProtection")}</span>
           </div>
         </div>
 
         <div className="tarjeta-metrica card-glow-azul">
           <div className="metrica-header">
-            <span className="metrica-titulo">Colchón de Liquidez & VaR</span>
+            <span className="metrica-titulo">{t("dashboard.liquidityVarTitle")}</span>
             <span className="pill-badge pill-azul">Merton Jump</span>
           </div>
           <div className="metrica-cifra-principal">{fmtPct(buffer)} <span className="subcifra">/ {fmtPct(var95)}</span></div>
           <div className="metrica-footer">
-            <span className="tag-neutro">Cetes 28d inmediato</span>
-            <span className="metrica-detalle">VaR 95% a {datos?.riesgo ? 12 : 12}m</span>
+            <span className="tag-neutro">{t("dashboard.liquidityBuffer")}</span>
+            <span className="metrica-detalle">{t("dashboard.varAtHorizon")}</span>
           </div>
         </div>
       </div>
@@ -160,18 +189,23 @@ export default function Dashboard({
         <div className="tarjeta-grafica-principal">
           <div className="grafica-header">
             <div>
-              <h2 className="grafica-titulo">Trayectoria de Inflación: Tu Canasta vs INPC Oficial</h2>
-              <p className="grafica-subtitulo">Visualiza cómo tu gasto real diverge del promedio nacional publicado por INEGI.</p>
+              <h2 className="grafica-titulo">{t("dashboard.chartTitle")}</h2>
+              <p className="grafica-subtitulo">{t("dashboard.chartSubtitle")}</p>
             </div>
             <div className="periodo-selector">
-              {["1M", "6M", "1A", "3A"].map(p => (
+              {[
+                { id: "6M", label: t("dashboard.period6M") },
+                { id: "1A", label: t("dashboard.period1Y") },
+                { id: "3A", label: t("dashboard.period3Y") },
+                { id: "Histórico", label: t("dashboard.periodMax") },
+              ].map(item => (
                 <button
-                  key={p}
+                  key={item.id}
                   type="button"
-                  className={`btn-periodo ${periodo === p ? "activo" : ""}`}
-                  onClick={() => setPeriodo(p)}
+                  className={`btn-periodo ${periodo === item.id ? "activo" : ""}`}
+                  onClick={() => setPeriodo(item.id)}
                 >
-                  {p}
+                  {item.label}
                 </button>
               ))}
             </div>
@@ -182,29 +216,29 @@ export default function Dashboard({
               <AreaChart data={datosGrafica} margin={{ top: 15, right: 15, left: -20, bottom: 0 }}>
                 <defs>
                   <linearGradient id="colorPersonal" x1="0" y1="0" x2="0" y2="1">
-                    <stop offset="5%" stopColor="#c084fc" stopOpacity={0.45} />
-                    <stop offset="95%" stopColor="#c084fc" stopOpacity={0.0} />
+                    <stop offset="5%" stopColor="#f8cc1b" stopOpacity={0.24} />
+                    <stop offset="95%" stopColor="#f8cc1b" stopOpacity={0.01} />
                   </linearGradient>
                   <linearGradient id="colorGeneral" x1="0" y1="0" x2="0" y2="1">
-                    <stop offset="5%" stopColor="#38bdf8" stopOpacity={0.25} />
-                    <stop offset="95%" stopColor="#38bdf8" stopOpacity={0.0} />
+                    <stop offset="5%" stopColor="#8d959c" stopOpacity={0.14} />
+                    <stop offset="95%" stopColor="#8d959c" stopOpacity={0.01} />
                   </linearGradient>
                 </defs>
-                <CartesianGrid strokeDasharray="3 3" stroke="rgba(255,255,255,0.06)" vertical={false} />
-                <XAxis dataKey="fecha" stroke="#64748b" fontSize={12} tickLine={false} axisLine={false} />
-                <YAxis stroke="#64748b" fontSize={12} tickLine={false} axisLine={false} tickFormatter={v => `${v}%`} />
+                <CartesianGrid strokeDasharray="3 5" stroke="#292e32" vertical={false} />
+                <XAxis dataKey="fecha" stroke="#7f878e" fontSize={12} tickLine={false} axisLine={false} minTickGap={28} />
+                <YAxis stroke="#7f878e" fontSize={12} tickLine={false} axisLine={false} domain={["auto", "auto"]} tickFormatter={v => Number(v).toFixed(0)} />
                 <Tooltip
                   contentStyle={{
-                    backgroundColor: "#131722",
-                    borderColor: "rgba(255,255,255,0.12)",
-                    borderRadius: "10px",
-                    color: "#f8fafc",
-                    boxShadow: "0 8px 24px rgba(0,0,0,0.5)"
+                    backgroundColor: "#111315",
+                    borderColor: "#34393f",
+                    borderRadius: "8px",
+                    color: "#f1f3f4",
+                    boxShadow: "0 16px 38px rgba(0, 0, 0, 0.28)"
                   }}
-                  formatter={(val, name) => [`${val}%`, name === "personal" ? "Tu Inflación" : "INPC General"]}
+                  formatter={(val, name) => [Number(val).toFixed(2), name === "personal" ? t("dashboard.yourBasket") : t("dashboard.generalInpc")]}
                 />
-                <Area type="monotone" dataKey="personal" stroke="#c084fc" strokeWidth={3} fillOpacity={1} fill="url(#colorPersonal)" />
-                <Area type="monotone" dataKey="general" stroke="#38bdf8" strokeWidth={2} fillOpacity={1} fill="url(#colorGeneral)" />
+                <Area type="linear" dataKey="personal" stroke="#f8cc1b" strokeWidth={2.4} fillOpacity={1} fill="url(#colorPersonal)" dot={false} activeDot={{ r: 4 }} />
+                <Area type="linear" dataKey="general" stroke="#8d959c" strokeWidth={1.8} fillOpacity={1} fill="url(#colorGeneral)" dot={false} activeDot={{ r: 4 }} />
               </AreaChart>
             </ResponsiveContainer>
           </div>
@@ -212,14 +246,14 @@ export default function Dashboard({
           <div className="grafica-leyenda">
             <div className="leyenda-item">
               <span className="dot dot-morado"></span>
-              <span>Inflación Canasta Personal (Tus Gastos)</span>
+              <span>{t("dashboard.yourBasket")}</span>
             </div>
             <div className="leyenda-item">
               <span className="dot dot-azul"></span>
-              <span>INPC General INEGI</span>
+              <span>{t("dashboard.generalInpc")}</span>
             </div>
             <div className="leyenda-item margen-izq-auto">
-              <span className="badge-tecnico">Modelo QP Convexo cvxpy</span>
+              <span className="badge-tecnico">QP Model (cvxpy)</span>
             </div>
           </div>
         </div>
@@ -227,13 +261,13 @@ export default function Dashboard({
         {/* Portafolio Óptimo: Distribución de Activos */}
         <div className="tarjeta-activos-optimos">
           <div className="activos-header">
-            <h2 className="activos-titulo">Composición Óptima</h2>
+            <h2 className="activos-titulo">{t("dashboard.optimalDistribution")}</h2>
             <button
               type="button"
               className="btn-ver-todo"
               onClick={() => onIr("cobertura")}
             >
-              Ajustar Colchón →
+              {esIngles ? "Adjust Buffer →" : "Ajustar Colchón →"}
             </button>
           </div>
 
@@ -245,7 +279,7 @@ export default function Dashboard({
                   <span className="activo-nombre">{activo.label}</span>
                 </div>
                 <div className="activo-barra-wrapper">
-                  <div className="activo-barra-progreso" style={{ width: `${Math.min(activo.peso * 100 * 2.2, 100)}%` }} />
+                  <div className="activo-barra-progreso" style={{ width: `${Math.min(activo.peso * 100, 100)}%` }} />
                 </div>
                 <div className="activo-peso-cifra">
                   {fmtPct(activo.peso)}
@@ -256,7 +290,7 @@ export default function Dashboard({
 
           <div className="card-ai-banner">
             <div className="banner-texto">
-              <strong>Estrategia Activa:</strong> Portafolio sobre-ponderado en instrumentos indizados para contrarrestar rubros de alimentos y vivienda.
+              <strong>Estrategia Activa:</strong> Portafolio sobreponderado en instrumentos indexados para contrarrestar los rubros de alimentos y vivienda.
             </div>
             <button
               type="button"
@@ -274,8 +308,8 @@ export default function Dashboard({
         <div className="tarjeta-guia" onClick={() => onIr("transacciones")}>
           <div className="icono-guia"><IconoSubir size={24} /></div>
           <div className="texto-guia">
-            <h3>Cargar Estado de Cuenta PDF</h3>
-            <p>Extrae automáticamente tus transacciones de BBVA, Santander o Banorte y actualiza tu canasta.</p>
+            <h3>Cargar Estado de Cuenta en PDF</h3>
+            <p>Extrae automáticamente tus transacciones de BBVA, Santander, Banorte o Citibanamex y actualiza tu canasta.</p>
           </div>
           <span className="flecha-guia">→</span>
         </div>
@@ -284,7 +318,7 @@ export default function Dashboard({
           <div className="icono-guia"><IconoRiesgo size={24} /></div>
           <div className="texto-guia">
             <h3>Simulación Monte Carlo con Saltos</h3>
-            <p>Simula 10,000 caminos de retorno con modelo de Merton para evaluar caídas de mercado extremas.</p>
+            <p>Simula 1,000 caminos de retorno con modelo de Merton para evaluar caídas de mercado extremas.</p>
           </div>
           <span className="flecha-guia">→</span>
         </div>
@@ -292,8 +326,8 @@ export default function Dashboard({
         <div className="tarjeta-guia" onClick={() => onIr("comparar")}>
           <div className="icono-guia"><IconoPortafolio size={24} /></div>
           <div className="texto-guia">
-            <h3>Comparador de Escenarios A vs B</h3>
-            <p>Compara el impacto de cambiar tu canasta o reducir tu colchón frente a corridas anteriores.</p>
+            <h3>Comparador de Escenarios (A vs. B)</h3>
+            <p>Compara el impacto de cambiar tu canasta o reducir tu colchón frente a análisis anteriores.</p>
           </div>
           <span className="flecha-guia">→</span>
         </div>
