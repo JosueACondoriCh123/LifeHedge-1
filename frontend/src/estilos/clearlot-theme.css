@@ -1230,7 +1230,7 @@ body .esqueleto-fila {
 
 .landing-hero h1 {
   color: #f7f8f9;
-  font-size: clamp(3.2rem, 5.4vw, 6rem);
+  font-size: clamp(3.2rem, 5.4vw, 5.15rem);
   font-weight: 590;
 }
 
@@ -1835,16 +1835,20 @@ body .esqueleto-fila {
 
 @media (max-width: 850px) {
   .layout-helios-app {
+    height: 100dvh;
     min-height: 100vh;
     flex-direction: column;
+    overflow: hidden;
   }
 
   .sidebar-helios {
     position: relative;
+    flex: 0 0 auto;
     width: 100%;
     min-width: 100%;
     height: auto;
     min-height: 0;
+    max-height: 122px;
     border: 0;
     border-bottom: 1px solid #272b2f;
   }
@@ -1861,8 +1865,13 @@ body .esqueleto-fila {
 
   .sidebar-menu-scroll {
     display: flex;
+    flex: 0 0 auto;
+    flex-direction: row;
+    align-items: center;
+    width: 100%;
     padding: 8px 12px;
     overflow-x: auto;
+    overflow-y: hidden;
   }
 
   .menu-seccion-titulo,
@@ -1872,6 +1881,8 @@ body .esqueleto-fila {
 
   .menu-nav {
     display: flex;
+    flex-direction: row;
+    align-items: center;
     flex: 0 0 auto;
     gap: 5px;
   }
@@ -1892,15 +1903,20 @@ body .esqueleto-fila {
     height: auto;
     min-height: 0;
     flex: 1;
+    overflow: hidden;
   }
 
   .header-helios {
+    flex: 0 0 54px;
     min-height: 54px;
     height: 54px;
   }
 
   .area-vistas-scroll {
+    min-height: 0;
     padding: 24px 18px 38px;
+    overflow-x: hidden;
+    overflow-y: auto;
   }
 
   .landing-hero {
@@ -1910,11 +1926,88 @@ body .esqueleto-fila {
 
 @media (max-width: 580px) {
   .header-helios {
-    padding: 0 14px;
+    gap: 8px;
+    padding: 0 12px;
+  }
+
+  .header-izq {
+    min-width: 0;
+    flex: 1;
+    overflow: hidden;
+  }
+
+  .breadcrumb-seccion,
+  .breadcrumb-sep,
+  .status-backend-pill span:last-child,
+  .btn-header-guardar {
+    display: none;
+  }
+
+  .breadcrumb-actual {
+    display: block;
+    overflow: hidden;
+    font-size: 0.78rem;
+    text-overflow: ellipsis;
+    white-space: nowrap;
+  }
+
+  .header-der {
+    flex: 0 0 auto;
+    gap: 6px;
+  }
+
+  .status-backend-pill,
+  .btn-icono-header,
+  .btn-header-reporte {
+    width: 34px;
+    min-width: 34px;
+    height: 34px;
+    min-height: 34px;
+    justify-content: center;
+    padding: 0;
+  }
+
+  .btn-header-reporte {
+    overflow: hidden;
+    font-size: 0;
   }
 
   .area-vistas-scroll {
     padding: 20px 14px 34px;
+  }
+
+  .dashboard-top-bar,
+  .grafica-header {
+    align-items: stretch;
+    flex-direction: column;
+  }
+
+  .top-acciones-rapidas {
+    width: 100%;
+    min-width: 0;
+    max-width: 100%;
+    flex-wrap: nowrap;
+    padding-bottom: 4px;
+    overflow-x: auto;
+  }
+
+  .btn-accion-rapida {
+    flex: 0 0 auto;
+    white-space: nowrap;
+  }
+
+  .tarjeta-grafica-principal,
+  .tarjeta-activos-optimos {
+    padding: 18px 16px;
+  }
+
+  .periodo-selector {
+    width: 100%;
+    overflow-x: auto;
+  }
+
+  .btn-periodo {
+    flex: 1 0 auto;
   }
 
   .metricas-grid,
@@ -1929,6 +2022,20 @@ body .esqueleto-fila {
 
   .landing-nav {
     width: calc(100% - 24px);
+    padding: 0 16px !important;
+  }
+
+  .landing-nav-login {
+    display: none;
+  }
+
+  .landing-nav-actions {
+    gap: 8px;
+  }
+
+  .landing-nav-cta {
+    padding: 8px 12px;
+    font-size: 0.76rem;
   }
 
   .pantalla-acceso-wrapper {
